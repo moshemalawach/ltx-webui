@@ -78,3 +78,17 @@ MIT for this UI. LTX-2.3 weights are under the
 [LTX-2 Community License](https://huggingface.co/Lightricks/LTX-2.3/blob/main/LICENSE)
 (free under $10M revenue; check before commercial use at scale). Gemma is
 under its own license.
+
+## Post-production example (overlays/)
+
+`overlays/` contains the working example of the full brand-film layer used to
+produce vertical films from generated shots:
+
+- `make_overlays.py` / `make_overlays_v2.py` — SVG-templated type plates,
+  scrims, and cold-open cards rendered to PNG (Inkscape).
+- `make_lockups.py` — full-bleed end cards.
+- `build_films.sh` / `build_films_v2.sh` — ffmpeg assembly: cold open, graded
+  shots, sliding type, textless inserts, audio bed, lockup. Paths overridable
+  via `LTX_OUTPUTS` / `LTX_OVERLAYS`.
+
+The copy/branding in the configs is example content — swap in your own.

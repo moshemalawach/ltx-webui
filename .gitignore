@@ -5,3 +5,5 @@ keyframes/
 __pycache__/
 *.pyc
 nohup.out
+overlays/*.png
+overlays/*.svg
