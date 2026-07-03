@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LTX Video Studio</title>
+<style>
+  :root {
+    --bg0:#141421; --bg1:#1c1c32; --line:#3a2d66; --violet:#5100cd;
+    --ink:#f9f4ff; --muted:#c8adf0; --lime:#d4ff00;
+  }
+  * { box-sizing:border-box; margin:0; }
+  body {
+    font-family:'Noto Sans',system-ui,sans-serif; color:var(--ink); min-height:100vh;
+    background:linear-gradient(105deg,var(--bg0) 8%,#2a0a68 70%,var(--violet) 120%);
+    padding:32px 20px 80px;
+  }
+  .wrap { max-width:1080px; margin:0 auto; }
+  header { display:flex; align-items:baseline; gap:14px; margin-bottom:26px; }
+  header h1 { font-size:22px; letter-spacing:.14em; text-transform:uppercase; }
+  header span { color:var(--muted); font-size:13px; }
+  .card {
+    background:rgba(28,28,50,.92); border:1px solid var(--line); border-radius:14px;
+    padding:20px; margin-bottom:22px;
+  }
+  textarea {
+    width:100%; min-height:110px; background:#12121f; color:var(--ink);
+    border:1px solid var(--line); border-radius:10px; padding:12px 14px;
+    font:inherit; font-size:14px; resize:vertical;
+  }
+  textarea:focus, select:focus, input:focus { outline:1px solid var(--violet); }
+  .row { display:flex; flex-wrap:wrap; gap:12px; margin-top:14px; align-items:center; }
+  label { font-size:12px; color:var(--muted); display:flex; flex-direction:column; gap:4px; }
+  select, input[type=number] {
+    background:#12121f; color:var(--ink); border:1px solid var(--line);
+    border-radius:8px; padding:8px 10px; font:inherit; font-size:13px;
+  }
+  button {
+    background:var(--lime); color:#141421; border:0; border-radius:10px;
+    padding:11px 22px; font:inherit; font-weight:700; font-size:14px; cursor:pointer;
+  }
+  button:disabled { opacity:.5; cursor:wait; }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+  .chip {
+    background:transparent; color:var(--muted); border:1px solid var(--line);
+    border-radius:999px; padding:5px 12px; font-size:12px; font-weight:400;
+  }
+  .chip:hover { color:var(--lime); border-color:var(--lime); }
+  h2 { font-size:13px; letter-spacing:.16em; text-transform:uppercase; color:var(--lime); margin:26px 0 12px; }
+  .job { border-top:1px solid var(--line); padding:12px 2px; font-size:13px; }
+  .job:first-child { border-top:0; }
+  .job .p { color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:70ch; }
+  .status { font-weight:700; }
+  .status.queued { color:var(--muted); } .status.running { color:var(--lime); }
+  .status.done { color:#63e570; } .status.failed { color:#ff6b6b; }
+  .log { font-family:monospace; font-size:11px; color:var(--muted); margin-top:4px; white-space:pre-wrap; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:14px; }
+  .grid figure { background:rgba(28,28,50,.92); border:1px solid var(--line); border-radius:12px; padding:10px; }
+  .grid video { width:100%; border-radius:8px; background:#000; }
+  .grid figcaption { font-size:11px; color:var(--muted); margin-top:6px; word-break:break-all; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><h1>LTX Video Studio</h1><span>LTX-2.3 22B distilled &middot; local RTX 5090 &middot; ~3 min per 8s clip</span></header>
+
+  <div class="card">
+    <textarea id="prompt" placeholder="Describe the shot like a cinematographer: action first, then movement, appearance, environment, camera, lighting. One flowing paragraph, under 200 words."></textarea>
+    <div class="chips" id="chips"></div>
+    <div class="row">
+      <label>Format
+        <select id="format">
+          <option value="1920x1088">16:9 &middot; 1920&times;1088</option>
+          <option value="1088x1920">9:16 &middot; 1088&times;1920</option>
+          <option value="1280x1280">1:1 &middot; 1280&times;1280</option>
+          <option value="1536x640">21:9 &middot; 1536&times;640</option>
+        </select>
+      </label>
+      <label>Duration
+        <select id="frames">
+          <option value="97">4 s</option>
+          <option value="193" selected>8 s</option>
+          <option value="249">10 s</option>
+          <option value="297">12 s</option>
+          <option value="377">15 s</option>
+        </select>
+      </label>
+      <label>Seed
+        <input type="number" id="seed" placeholder="random" style="width:110px">
+      </label>
+      <button id="go" style="margin-left:auto">Generate</button>
+    </div>
+    <div class="row">
+      <label>Keyframe (conditions frame 0 — palette/geometry lock)
+        <select id="keyframe"><option value="">none (text only)</option></select>
+      </label>
+      <label>Strength
+        <input type="number" id="kfstrength" value="0.9" min="0.1" max="1" step="0.05" style="width:80px">
+      </label>
+      <label>Upload keyframe
+        <input type="file" id="kfupload" accept=".png,.jpg,.jpeg,.webp" style="font-size:12px">
+      </label>
+      <img id="kfpreview" alt="" style="height:74px;border-radius:8px;border:1px solid var(--line);display:none">
+    </div>
+  </div>
+
+  <h2>Queue</h2>
+  <div class="card" id="jobs">No jobs yet.</div>
+
+  <h2>Gallery</h2>
+  <div class="grid" id="gallery"></div>
+</div>
+
+<script>
+const PRESETS = [
+  ["Aleph token flow (photoreal)", "Photorealistic cinematic shot in a vast dark server hall at night. Thin fiber-optic light strands of cool white light flow from the left through the darkness into a real glass prism mounted on a matte black pedestal at center frame, the camera pushing in very slowly and steadily. The prism interior glows deep violet, refracting light across its polished faces. On its right side, the light exits as four separate luminous lime-green fiber channels of clearly different thickness, the widest on top, running in parallel toward the right edge where they disappear into the dark. Microscopic dust particles drift through the beams. The background shows blurred rows of dark server racks with tiny violet status LEDs, heavy bokeh. Volumetric light, deep blacks, high contrast, shallow depth of field, anamorphic feel, slow steady camera push, photorealistic detail, ultra sharp."],
+  ["Aleph confidential compute", "A tall obsidian-black monolithic server machine stands alone in a dim concrete hall, its surface completely smooth and sealed with no windows or vents, while a narrow seam of deep violet light pulses slowly along its edges, showing that it is working. The camera orbits the monolith in a slow, steady arc. In the polished floor around it, faint reflections of moving figures pass by, but the machine's black surface reflects nothing back and reveals nothing of its interior. Thin wisps of cool mist drift low across the floor. A single shaft of pale light falls from high above, catching dust particles in the air. Color palette of near-black, deep violet, and cold grey, one thin lime-green status line glowing steadily near the machine's base. Cinematic, quiet, monumental mood, slow constant camera movement, shallow depth of field, photorealistic, ultra sharp."],
+  ["LibertAI terminal engine", "Extreme close-up of a glowing rectangular cursor blinking in the dark, then the camera pulls back smoothly and continuously to reveal that the glow comes from a massive industrial machine core suspended in a vast dark hall, burning bright amber-orange from within like a furnace made of circuitry. Rows of dark server racks with faint violet and magenta accent lights recede into the depth on both sides, their edges catching the orange glow. Cables arc from the ceiling toward the core. Heat shimmer rises gently above the machine, and small embers of light drift upward like sparks. The pullback keeps the burning core perfectly centered as the scale becomes monumental. Dark moody industrial atmosphere, cinematic volumetric light, deep blacks, saturated amber core against cool violet shadows, steady seamless camera pullback, photorealistic detail, ultra sharp."],
+];
+
+const $ = (id) => document.getElementById(id);
+const chips = $("chips");
+for (const [name, text] of PRESETS) {
+  const b = document.createElement("button");
+  b.className = "chip"; b.textContent = name;
+  b.onclick = () => { $("prompt").value = text; };
+  chips.appendChild(b);
+}
+
+async function loadKeyframes(selectName) {
+  const names = await fetch("/api/keyframes").then(r => r.json());
+  const sel = $("keyframe");
+  const cur = selectName ?? sel.value;
+  sel.innerHTML = '<option value="">none (text only)</option>' +
+    names.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join("");
+  sel.value = names.includes(cur) ? cur : "";
+  sel.onchange = () => {
+    const p = $("kfpreview");
+    if (sel.value) { p.src = "/keyframes/" + encodeURIComponent(sel.value); p.style.display = "block"; }
+    else p.style.display = "none";
+  };
+  sel.onchange();
+}
+
+$("kfupload").onchange = async () => {
+  const f = $("kfupload").files[0];
+  if (!f) return;
+  const fd = new FormData();
+  fd.append("file", f);
+  const r = await fetch("/api/keyframes", { method: "POST", body: fd });
+  if (r.ok) { const { name } = await r.json(); await loadKeyframes(name); }
+  else alert("upload failed");
+};
+
+$("go").onclick = async () => {
+  const prompt = $("prompt").value.trim();
+  if (prompt.length < 10) { alert("Write a prompt first."); return; }
+  const [w, h] = $("format").value.split("x").map(Number);
+  const body = { prompt, width: w, height: h, num_frames: Number($("frames").value), frame_rate: 25.0 };
+  const seed = $("seed").value.trim();
+  if (seed !== "") body.seed = Number(seed);
+  if ($("keyframe").value) {
+    body.keyframe = $("keyframe").value;
+    body.keyframe_strength = Number($("kfstrength").value) || 0.9;
+  }
+  $("go").disabled = true;
+  try {
+    const r = await fetch("/api/generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    if (!r.ok) alert((await r.json()).detail || "request failed");
+  } finally { $("go").disabled = false; refresh(); }
+};
+
+function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+
+// Re-rendering with innerHTML kills playing <video> elements, so each section
+// only re-renders when its content actually changed, and the gallery also
+// waits while any of its videos is playing.
+let lastJobsHTML = "", lastGalleryKey = "";
+
+function anyPlaying(container) {
+  return [...container.querySelectorAll("video")].some(v => !v.paused && !v.ended);
+}
+
+async function refresh() {
+  const [jobs, gallery] = await Promise.all([
+    fetch("/api/jobs").then(r => r.json()),
+    fetch("/api/gallery").then(r => r.json()),
+  ]);
+  const jb = $("jobs");
+  const jobsHTML = jobs.length ? jobs.map(j => `
+    <div class="job">
+      <span class="status ${j.status}">${j.status}</span>
+      &middot; ${j.width}&times;${j.height} &middot; ${((j.num_frames - 1) / j.frame_rate).toFixed(0)}s &middot; seed ${j.seed}
+      ${j.elapsed ? `&middot; ${j.elapsed}s elapsed` : ""}
+      <div class="p" title="${esc(j.prompt)}">${esc(j.prompt)}</div>
+      ${j.status === "running" && j.log ? `<div class="log">${esc(j.log)}</div>` : ""}
+      ${j.status === "failed" && j.error ? `<div class="log">${esc(j.error)}</div>` : ""}
+      ${j.status === "done" ? `<div class="log">saved as ${esc(j.file)} &middot; play it in the gallery below</div>` : ""}
+    </div>`).join("") : "No jobs yet.";
+  if (jobsHTML !== lastJobsHTML) { jb.innerHTML = jobsHTML; lastJobsHTML = jobsHTML; }
+
+  const galleryKey = gallery.map(v => v.file).join("|");
+  const gal = $("gallery");
+  if (galleryKey !== lastGalleryKey && !anyPlaying(gal)) {
+    gal.innerHTML = gallery.map(v => `
+      <figure>
+        <video controls preload="metadata" src="/videos/${encodeURIComponent(v.file)}"></video>
+        <figcaption>${esc(v.file)} &middot; ${v.size_mb} MB &middot; ${v.mtime}</figcaption>
+      </figure>`).join("");
+    lastGalleryKey = galleryKey;
+  }
+}
+loadKeyframes();
+refresh();
+setInterval(refresh, 2500);
+</script>
+</body>
+</html>

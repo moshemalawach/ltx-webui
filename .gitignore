@@ -1,0 +1,7 @@
+.venv/
+outputs/
+logs/
+keyframes/
+__pycache__/
+*.pyc
+nohup.out
