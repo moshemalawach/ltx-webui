@@ -7,3 +7,4 @@ __pycache__/
 nohup.out
 overlays/*.png
 overlays/*.svg
+overlays/*.mp4
