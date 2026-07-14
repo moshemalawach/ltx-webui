@@ -1,4 +1,5 @@
 .venv/
+.env
 outputs/
 logs/
 keyframes/
@@ -8,3 +9,18 @@ nohup.out
 overlays/*.png
 overlays/*.svg
 overlays/*.mp4
+
+# media/renders anywhere in the tree
+*.mp4
+*.mov
+*.webm
+*.mkv
+*.wav
+*.mp3
+*.flac
+*.m4a
+*.aac
+*.safetensors
+*.gguf
+*.ckpt
+*.pt

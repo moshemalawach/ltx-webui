@@ -3,216 +3,2139 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LTX Video Studio</title>
+<meta name="theme-color" content="#1d1d1b">
+<link rel="icon" href="data:,">
+<title>UGC Factory</title>
 <style>
   :root {
-    --bg0:#141421; --bg1:#1c1c32; --line:#3a2d66; --violet:#5100cd;
-    --ink:#f9f4ff; --muted:#c8adf0; --lime:#d4ff00;
+    --canvas: #f3f4f1;
+    --surface: #ffffff;
+    --surface-2: #f8f8f6;
+    --ink: #1d1d1b;
+    --ink-soft: #5f615c;
+    --ink-faint: #8a8d86;
+    --line: #dedfd9;
+    --line-strong: #c7c9c2;
+    --coral: #ef6045;
+    --coral-dark: #d64b33;
+    --lime: #d8f45f;
+    --blue: #4e76de;
+    --green: #2c9259;
+    --red: #c44138;
+    --amber: #a56a13;
+    --sidebar: #1d1d1b;
+    --sidebar-soft: #acafa7;
+    --radius: 8px;
   }
-  * { box-sizing:border-box; margin:0; }
+
+  * { box-sizing: border-box; letter-spacing: 0; }
+  html { background: var(--canvas); }
   body {
-    font-family:'Noto Sans',system-ui,sans-serif; color:var(--ink); min-height:100vh;
-    background:linear-gradient(105deg,var(--bg0) 8%,#2a0a68 70%,var(--violet) 120%);
-    padding:32px 20px 80px;
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
+    color: var(--ink);
+    background: var(--canvas);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14px;
+    line-height: 1.45;
   }
-  .wrap { max-width:1080px; margin:0 auto; }
-  header { display:flex; align-items:baseline; gap:14px; margin-bottom:26px; }
-  header h1 { font-size:22px; letter-spacing:.14em; text-transform:uppercase; }
-  header span { color:var(--muted); font-size:13px; }
-  .card {
-    background:rgba(28,28,50,.92); border:1px solid var(--line); border-radius:14px;
-    padding:20px; margin-bottom:22px;
+
+  button, input, select, textarea { font: inherit; }
+  button { color: inherit; }
+  button, a { -webkit-tap-highlight-color: transparent; }
+  button:focus-visible, a:focus-visible, input:focus-visible,
+  select:focus-visible, textarea:focus-visible, summary:focus-visible {
+    outline: 3px solid rgba(78, 118, 222, .24);
+    outline-offset: 1px;
+  }
+
+  .app-shell {
+    display: grid;
+    grid-template-columns: 216px minmax(0, 1fr);
+    min-height: 100vh;
+  }
+
+  .sidebar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 20px 14px 16px;
+    color: #fff;
+    background: var(--sidebar);
+    border-right: 1px solid #31312e;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    min-height: 46px;
+    padding: 0 8px 19px;
+    border-bottom: 1px solid #353532;
+  }
+  .brand-mark {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    color: var(--ink);
+    background: var(--lime);
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 850;
+  }
+  .brand-name { font-size: 16px; font-weight: 760; line-height: 1.05; }
+  .brand-name small {
+    display: block;
+    margin-top: 4px;
+    color: var(--sidebar-soft);
+    font-size: 10px;
+    font-weight: 650;
+    text-transform: uppercase;
+  }
+
+  .nav {
+    display: grid;
+    gap: 4px;
+    margin-top: 20px;
+  }
+  .nav-button {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr) auto;
+    align-items: center;
+    min-height: 42px;
+    width: 100%;
+    padding: 8px 10px;
+    color: var(--sidebar-soft);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    text-align: left;
+    cursor: pointer;
+  }
+  .nav-button:hover { color: #fff; background: #292927; }
+  .nav-button.active {
+    color: #fff;
+    background: #30302d;
+    border-color: #40403c;
+  }
+  .nav-index { font-size: 10px; font-weight: 800; color: #74766f; }
+  .nav-button.active .nav-index { color: var(--lime); }
+  .nav-label { font-size: 13px; font-weight: 660; }
+  .nav-badge {
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    display: none;
+    place-items: center;
+    color: var(--ink);
+    background: var(--lime);
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 800;
+  }
+  .nav-badge.visible { display: grid; }
+
+  .engine {
+    margin-top: auto;
+    padding: 13px 10px 4px;
+    border-top: 1px solid #353532;
+  }
+  .engine-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .engine-label { color: #fff; font-size: 12px; font-weight: 680; }
+  .engine-meta { margin-top: 4px; color: var(--sidebar-soft); font-size: 10px; }
+  .connection-dot {
+    width: 8px;
+    height: 8px;
+    flex: 0 0 8px;
+    background: #777872;
+    border-radius: 50%;
+  }
+  .connection-dot.online { background: var(--lime); }
+  .connection-dot.offline { background: var(--coral); }
+
+  .workspace { min-width: 0; }
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 15;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    min-height: 76px;
+    padding: 14px 28px;
+    background: rgba(243, 244, 241, .96);
+    border-bottom: 1px solid var(--line);
+    backdrop-filter: blur(12px);
+  }
+  .crumb { margin: 0 0 2px; color: var(--ink-faint); font-size: 11px; font-weight: 700; text-transform: uppercase; }
+  h1 { margin: 0; font-size: 23px; line-height: 1.2; font-weight: 760; }
+  .topbar-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+  .save-state { color: var(--ink-faint); font-size: 11px; white-space: nowrap; }
+
+  .button {
+    min-height: 38px;
+    padding: 8px 14px;
+    border: 1px solid var(--line-strong);
+    border-radius: 6px;
+    background: var(--surface);
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .button:hover { border-color: #9b9e96; background: var(--surface-2); }
+  .button:disabled { cursor: wait; opacity: .58; }
+  .button.primary {
+    color: #fff;
+    background: var(--ink);
+    border-color: var(--ink);
+  }
+  .button.primary:hover { background: #30302d; }
+  .button.coral { color: #fff; background: var(--coral); border-color: var(--coral); }
+  .button.coral:hover { background: var(--coral-dark); border-color: var(--coral-dark); }
+  .button.compact { min-height: 32px; padding: 6px 10px; font-size: 11px; }
+
+  main { width: 100%; padding: 24px 28px 52px; }
+  .view { display: none; }
+  .view.active { display: block; }
+  .create-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 348px;
+    gap: 18px;
+    width: min(1280px, 100%);
+    margin: 0 auto;
+    align-items: start;
+  }
+  .build-column, .production-column { display: grid; gap: 18px; min-width: 0; }
+  .production-column { position: sticky; top: 100px; }
+
+  .surface {
+    min-width: 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+  .surface-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-height: 55px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .surface-title { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .section-number {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+    color: var(--ink-soft);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    font-size: 10px;
+    font-weight: 800;
+  }
+  h2 { margin: 0; font-size: 14px; line-height: 1.25; font-weight: 760; }
+  .section-status { color: var(--ink-faint); font-size: 11px; white-space: nowrap; }
+  .surface-body { padding: 16px; }
+
+  .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .field-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .field { display: grid; gap: 6px; min-width: 0; }
+  .field.full { grid-column: 1 / -1; }
+  .field > span, .field-label { color: var(--ink-soft); font-size: 11px; font-weight: 700; }
+  .required { color: var(--coral-dark); }
+  input[type="text"], input[type="number"], input[type="search"], select, textarea {
+    width: 100%;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: 6px;
+    outline: 0;
+  }
+  input[type="text"], input[type="number"], input[type="search"], select {
+    height: 40px;
+    padding: 8px 10px;
   }
   textarea {
-    width:100%; min-height:110px; background:#12121f; color:var(--ink);
-    border:1px solid var(--line); border-radius:10px; padding:12px 14px;
-    font:inherit; font-size:14px; resize:vertical;
+    min-height: 102px;
+    padding: 10px 11px;
+    resize: vertical;
+    line-height: 1.52;
   }
-  textarea:focus, select:focus, input:focus { outline:1px solid var(--violet); }
-  .row { display:flex; flex-wrap:wrap; gap:12px; margin-top:14px; align-items:center; }
-  label { font-size:12px; color:var(--muted); display:flex; flex-direction:column; gap:4px; }
-  select, input[type=number] {
-    background:#12121f; color:var(--ink); border:1px solid var(--line);
-    border-radius:8px; padding:8px 10px; font:inherit; font-size:13px;
+  input:hover, select:hover, textarea:hover { border-color: #aeb1a9; }
+  input:focus, select:focus, textarea:focus { border-color: var(--blue); }
+  input::placeholder, textarea::placeholder { color: #a1a39d; }
+
+  .choice-group {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    gap: 3px;
+    padding: 3px;
+    background: #eceee9;
+    border-radius: 7px;
   }
-  button {
-    background:var(--lime); color:#141421; border:0; border-radius:10px;
-    padding:11px 22px; font:inherit; font-weight:700; font-size:14px; cursor:pointer;
+  .choice-group button {
+    min-height: 34px;
+    padding: 6px 8px;
+    color: var(--ink-soft);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
   }
-  button:disabled { opacity:.5; cursor:wait; }
-  .chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
-  .chip {
-    background:transparent; color:var(--muted); border:1px solid var(--line);
-    border-radius:999px; padding:5px 12px; font-size:12px; font-weight:400;
+  .choice-group button:hover { color: var(--ink); }
+  .choice-group button.active {
+    color: var(--ink);
+    background: var(--surface);
+    border-color: #d5d6d0;
+    box-shadow: 0 1px 2px rgba(29, 29, 27, .08);
   }
-  .chip:hover { color:var(--lime); border-color:var(--lime); }
-  h2 { font-size:13px; letter-spacing:.16em; text-transform:uppercase; color:var(--lime); margin:26px 0 12px; }
-  .job { border-top:1px solid var(--line); padding:12px 2px; font-size:13px; }
-  .job:first-child { border-top:0; }
-  .job .p { color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:70ch; }
-  .status { font-weight:700; }
-  .status.queued { color:var(--muted); } .status.running { color:var(--lime); }
-  .status.done { color:#63e570; } .status.failed { color:#ff6b6b; }
-  .log { font-family:monospace; font-size:11px; color:var(--muted); margin-top:4px; white-space:pre-wrap; }
-  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:14px; }
-  .grid figure { background:rgba(28,28,50,.92); border:1px solid var(--line); border-radius:12px; padding:10px; }
-  .grid video { width:100%; border-radius:8px; background:#000; }
-  .grid figcaption { font-size:11px; color:var(--muted); margin-top:6px; word-break:break-all; }
+
+  .creative-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+  }
+  .word-count { color: var(--ink-faint); font-size: 11px; }
+  .word-count.warning { color: var(--red); font-weight: 760; }
+  .surface-actions, .button-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  .ai-button {
+    color: #234fae;
+    background: #eef3ff;
+    border-color: #b9c9ef;
+  }
+  .ai-button:hover { color: #183b87; background: #e3ebff; border-color: #96afe8; }
+  .ai-button::before {
+    content: "AI";
+    display: inline-grid;
+    place-items: center;
+    min-width: 20px;
+    height: 18px;
+    margin-right: 6px;
+    color: #fff;
+    background: var(--blue);
+    border-radius: 4px;
+    font-size: 8px;
+    font-weight: 850;
+    vertical-align: 1px;
+  }
+  .ai-button:disabled::before { background: #8c929f; }
+  .ai-note {
+    margin-top: 13px;
+    padding: 9px 10px;
+    color: #36517e;
+    background: #f0f4fd;
+    border-left: 3px solid var(--blue);
+    border-radius: 0 5px 5px 0;
+    font-size: 10px;
+  }
+  .prompt-toolbar {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
+    align-items: end;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .prompt-summary { color: var(--ink-faint); font-size: 10px; text-align: right; }
+  #promptPreview {
+    min-height: 220px;
+    color: #303b53;
+    background: #f8f9fc;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+    line-height: 1.55;
+  }
+  .ai-working { color: var(--blue); }
+
+  .reference-stage {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    margin-bottom: 13px;
+    overflow: hidden;
+    color: var(--ink-soft);
+    background: #e9ebe6;
+    border: 1px dashed #bfc2ba;
+    border-radius: 6px;
+  }
+  .reference-stage.dragging { border-color: var(--blue); background: #eef2ff; }
+  .reference-stage img { width: 100%; height: 100%; object-fit: cover; display: none; }
+  .reference-stage.has-image img { display: block; }
+  .reference-stage.has-image .reference-empty { display: none; }
+  .reference-empty { display: grid; place-items: center; gap: 5px; text-align: center; }
+  .reference-glyph {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    color: var(--ink);
+    background: var(--lime);
+    border-radius: 6px;
+    font-size: 18px;
+    font-weight: 800;
+  }
+  .reference-empty strong { font-size: 12px; }
+  .reference-empty small { color: var(--ink-faint); font-size: 10px; }
+  .reference-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+  #kfupload { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+  .upload-label { display: grid; place-items: center; min-width: 72px; }
+
+  .range-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 42px;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  input[type="range"] { width: 100%; accent-color: var(--coral); }
+  .range-value { color: var(--ink-soft); font-size: 11px; font-weight: 750; text-align: right; }
+
+  .output-block + .output-block { margin-top: 14px; }
+  .output-label-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 7px; }
+  .output-label-row .field-label:last-child { color: var(--ink-faint); font-weight: 550; }
+  .select-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+  .batch-summary {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+  }
+  .variant-list { display: grid; gap: 7px; margin-bottom: 14px; }
+  .variant-row {
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    min-height: 30px;
+    color: var(--ink-soft);
+    font-size: 11px;
+  }
+  .variant-dot {
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    color: var(--ink);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    font-size: 9px;
+    font-weight: 800;
+  }
+  .variant-row strong { color: var(--ink); font-weight: 690; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .variant-row span:last-child { color: var(--ink-faint); }
+  .queue-button { width: 100%; min-height: 45px; font-size: 13px; }
+  .estimate { margin-top: 9px; color: var(--ink-faint); font-size: 10px; text-align: center; }
+
+  details.advanced { margin-top: 14px; border-top: 1px solid var(--line); }
+  details.advanced summary {
+    padding: 12px 0 0;
+    color: var(--ink-soft);
+    font-size: 11px;
+    font-weight: 720;
+    cursor: pointer;
+    list-style-position: inside;
+  }
+  .advanced-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 12px; }
+
+  .latest-media {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: #121210;
+    border-radius: 0 0 7px 7px;
+  }
+  .latest-media video { width: 100%; height: 100%; display: block; object-fit: cover; }
+  .latest-empty { position: absolute; inset: 0; display: grid; place-items: center; color: #8d8f88; font-size: 11px; }
+  .latest-media .clip-play { z-index: 2; }
+  .latest-caption {
+    position: absolute;
+    left: 9px;
+    right: 9px;
+    bottom: 9px;
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 7px 8px;
+    color: #fff;
+    background: rgba(20, 20, 18, .76);
+    border-radius: 4px;
+    font-size: 10px;
+  }
+  .latest-caption span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .latest-caption span:last-child { color: var(--lime); flex: 0 0 auto; }
+
+  .page-frame { width: min(1180px, 100%); margin: 0 auto; }
+  .page-tools {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  .stats { display: flex; flex-wrap: wrap; gap: 8px; }
+  .stat {
+    min-height: 34px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 10px;
+    color: var(--ink-soft);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font-size: 11px;
+  }
+  .stat strong { color: var(--ink); font-size: 12px; }
+  .search { width: min(280px, 100%); }
+
+  .queue-list { overflow: hidden; }
+  .queue-empty, .library-empty {
+    display: grid;
+    place-items: center;
+    min-height: 230px;
+    padding: 24px;
+    color: var(--ink-faint);
+    text-align: center;
+  }
+  .empty-mark {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    margin: 0 auto 10px;
+    color: var(--ink);
+    background: var(--lime);
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 850;
+  }
+  .queue-item {
+    display: grid;
+    grid-template-columns: 98px minmax(0, 1fr) 150px;
+    gap: 18px;
+    padding: 15px 16px;
+    border-top: 1px solid var(--line);
+  }
+  .queue-item:first-child { border-top: 0; }
+  .queue-state { display: grid; align-content: start; gap: 7px; }
+  .status-pill {
+    width: fit-content;
+    min-width: 66px;
+    padding: 4px 7px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    text-align: center;
+  }
+  .status-pill.running { color: #17458f; background: #e9f0ff; border-color: #b8c9ef; }
+  .status-pill.queued { color: var(--amber); background: #fff6e6; border-color: #ead5ad; }
+  .status-pill.done { color: #176b3d; background: #e8f6ee; border-color: #b8dfc8; }
+  .status-pill.failed { color: #9f302a; background: #fff0ef; border-color: #ecc4c0; }
+  .job-id { color: var(--ink-faint); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 9px; }
+  .job-main { min-width: 0; }
+  .job-title { margin: 0 0 4px; overflow: hidden; color: var(--ink); font-size: 13px; font-weight: 710; text-overflow: ellipsis; white-space: nowrap; }
+  .job-meta { color: var(--ink-faint); font-size: 10px; }
+  .job-log {
+    max-height: 52px;
+    margin-top: 8px;
+    overflow: auto;
+    color: var(--ink-soft);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 9px;
+    white-space: pre-wrap;
+  }
+  .job-tail { display: grid; align-content: start; justify-items: end; gap: 8px; text-align: right; }
+  .job-time { color: var(--ink-soft); font-size: 11px; font-weight: 680; }
+  .meter { position: relative; width: 112px; height: 4px; overflow: hidden; background: #e5e6e1; border-radius: 999px; }
+  .meter span { display: block; height: 100%; background: var(--line-strong); border-radius: inherit; }
+  .meter.running span { width: 35%; background: var(--blue); animation: working 1.5s ease-in-out infinite alternate; }
+  .meter.done span, .meter.failed span { width: 100%; }
+  .meter.done span { background: var(--green); }
+  .meter.failed span { background: var(--red); }
+  .meter.queued span { width: 14%; background: #d49a3f; }
+  @keyframes working { from { transform: translateX(-20%); } to { transform: translateX(205%); } }
+
+  .library-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+  .clip-card {
+    min-width: 0;
+    overflow: hidden;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+  .clip-media { position: relative; width: 100%; aspect-ratio: 16 / 10; background: #121210; }
+  .clip-media video { display: block; width: 100%; height: 100%; object-fit: contain; }
+  .clip-play {
+    position: absolute;
+    inset: 50% auto auto 50%;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    padding: 0 0 0 3px;
+    color: var(--ink);
+    background: var(--lime);
+    border: 0;
+    border-radius: 50%;
+    box-shadow: 0 5px 18px rgba(0, 0, 0, .28);
+    cursor: pointer;
+    transform: translate(-50%, -50%);
+  }
+  .clip-play:hover { background: #e3fa7f; }
+  .clip-play[hidden] { display: none; }
+  .clip-body { padding: 11px; }
+  .clip-name { margin: 0 0 5px; overflow: hidden; font-size: 11px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+  .clip-meta { color: var(--ink-faint); font-size: 10px; }
+  .clip-actions { display: flex; align-items: center; gap: 7px; margin-top: 10px; }
+  .clip-actions a { text-decoration: none; }
+
+  .toast {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 100;
+    width: min(360px, calc(100vw - 40px));
+    padding: 12px 14px;
+    color: #fff;
+    background: var(--ink);
+    border: 1px solid #3e3e3a;
+    border-radius: 7px;
+    box-shadow: 0 10px 30px rgba(20, 20, 18, .18);
+    font-size: 12px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(10px);
+    transition: opacity .18s ease, transform .18s ease;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.error { background: #7f2d27; border-color: #a54840; }
+
+  @media (max-width: 1080px) {
+    .create-layout { grid-template-columns: minmax(0, 1fr) 320px; }
+    .field-grid.three { grid-template-columns: 1fr 1fr; }
+    .library-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+
+  @media (max-width: 820px) {
+    .app-shell { display: block; padding-bottom: 66px; }
+    .sidebar {
+      position: fixed;
+      top: auto;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 50;
+      display: block;
+      width: auto;
+      height: 66px;
+      padding: 7px 10px;
+      border-top: 1px solid #393936;
+      border-right: 0;
+    }
+    .brand, .engine { display: none; }
+    .nav { grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 0; }
+    .nav-button {
+      grid-template-columns: 1fr;
+      justify-items: center;
+      min-height: 50px;
+      padding: 4px 7px;
+      text-align: center;
+    }
+    .nav-index { display: block; }
+    .nav-label { font-size: 11px; }
+    .nav-badge { position: absolute; margin: -22px 0 0 45px; }
+    .topbar { min-height: 68px; padding: 11px 16px; }
+    .topbar-actions .save-state { display: none; }
+    main { padding: 16px 14px 34px; }
+    .create-layout { display: block; }
+    .build-column, .production-column { display: grid; gap: 14px; }
+    .production-column { position: static; margin-top: 14px; }
+    .field-grid, .field-grid.three { grid-template-columns: 1fr; }
+    .field.full { grid-column: auto; }
+    .page-tools { align-items: stretch; flex-direction: column; }
+    .search { width: 100%; }
+  }
+
+  @media (max-width: 580px) {
+    h1 { font-size: 19px; }
+    .crumb { font-size: 9px; }
+    .topbar-actions .button { min-height: 34px; padding: 6px 9px; }
+    .surface-head { padding: 11px 12px; }
+    .surface-body { padding: 13px 12px; }
+    .choice-group { grid-auto-flow: row; grid-template-columns: repeat(3, 1fr); }
+    .choice-group.two { grid-template-columns: repeat(2, 1fr); }
+    .choice-group.five { grid-template-columns: repeat(5, 1fr); }
+    .creative-toolbar { align-items: flex-start; flex-direction: column; }
+    .creative-toolbar .button { width: 100%; }
+    .surface-actions .section-status { display: none; }
+    .button-row { width: 100%; align-items: stretch; flex-direction: column; }
+    .button-row .button { width: 100%; }
+    .prompt-toolbar { grid-template-columns: 1fr; align-items: stretch; }
+    .prompt-summary { text-align: left; }
+    .queue-item { grid-template-columns: 78px minmax(0, 1fr); gap: 10px; }
+    .job-tail { grid-column: 2; justify-items: start; text-align: left; }
+    .library-grid { grid-template-columns: 1fr; }
+    .latest-media, .reference-stage { aspect-ratio: 4 / 3; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+  }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header><h1>LTX Video Studio</h1><span>LTX-2.3 22B distilled &middot; local RTX 5090 &middot; ~3 min per 8s clip</span></header>
-
-  <div class="card">
-    <textarea id="prompt" placeholder="Describe the shot like a cinematographer: action first, then movement, appearance, environment, camera, lighting. One flowing paragraph, under 200 words."></textarea>
-    <div class="chips" id="chips"></div>
-    <div class="row">
-      <label>Format
-        <select id="format">
-          <option value="1920x1088">16:9 &middot; 1920&times;1088</option>
-          <option value="1088x1920">9:16 &middot; 1088&times;1920</option>
-          <option value="1280x1280">1:1 &middot; 1280&times;1280</option>
-          <option value="1536x640">21:9 &middot; 1536&times;640</option>
-        </select>
-      </label>
-      <label>Duration
-        <select id="frames">
-          <option value="97">4 s</option>
-          <option value="193" selected>8 s</option>
-          <option value="249">10 s</option>
-          <option value="297">12 s</option>
-          <option value="377">15 s</option>
-        </select>
-      </label>
-      <label>Seed
-        <input type="number" id="seed" placeholder="random" style="width:110px">
-      </label>
-      <button id="go" style="margin-left:auto">Generate</button>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">UF</div>
+      <div class="brand-name">UGC Factory<small>Local production</small></div>
     </div>
-    <div class="row">
-      <label>Keyframe (conditions frame 0 — palette/geometry lock)
-        <select id="keyframe"><option value="">none (text only)</option></select>
-      </label>
-      <label>Strength
-        <input type="number" id="kfstrength" value="0.9" min="0.1" max="1" step="0.05" style="width:80px">
-      </label>
-      <label>Upload keyframe
-        <input type="file" id="kfupload" accept=".png,.jpg,.jpeg,.webp" style="font-size:12px">
-      </label>
-      <img id="kfpreview" alt="" style="height:74px;border-radius:8px;border:1px solid var(--line);display:none">
+
+    <nav class="nav" aria-label="Workspace">
+      <button class="nav-button active" type="button" data-view="create">
+        <span class="nav-index">01</span><span class="nav-label">Create</span><span></span>
+      </button>
+      <button class="nav-button" type="button" data-view="queue">
+        <span class="nav-index">02</span><span class="nav-label">Queue</span><span class="nav-badge" id="queueBadge">0</span>
+      </button>
+      <button class="nav-button" type="button" data-view="library">
+        <span class="nav-index">03</span><span class="nav-label">Library</span><span></span>
+      </button>
+    </nav>
+
+    <div class="engine">
+      <div class="engine-row"><span class="engine-label">LTX-2.3 22B</span><span class="connection-dot" id="connectionDot"></span></div>
+      <div class="engine-meta" id="engineMeta">Checking local engine</div>
+      <div class="engine-row" style="margin-top:12px"><span class="engine-label" id="aiEngineLabel">GLM-5.2</span><span class="connection-dot" id="aiConnectionDot"></span></div>
+      <div class="engine-meta" id="aiEngineMeta">Checking co-writer</div>
     </div>
-  </div>
+  </aside>
 
-  <h2>Queue</h2>
-  <div class="card" id="jobs">No jobs yet.</div>
+  <section class="workspace">
+    <header class="topbar">
+      <div>
+        <p class="crumb" id="pageCrumb">Production workspace / Create</p>
+        <h1 id="pageTitle">New content batch</h1>
+      </div>
+      <div class="topbar-actions">
+        <span class="save-state" id="saveState">Draft ready</span>
+        <button class="button compact" id="resetDraft" type="button">Reset brief</button>
+      </div>
+    </header>
 
-  <h2>Gallery</h2>
-  <div class="grid" id="gallery"></div>
+    <main>
+      <section class="view active" id="view-create">
+        <div class="create-layout">
+          <div class="build-column">
+            <section class="surface">
+              <div class="surface-head">
+                <div class="surface-title"><span class="section-number">01</span><h2>Creative brief</h2></div>
+                <div class="surface-actions">
+                  <span class="section-status" id="briefStatus">6 fields</span>
+                  <button class="button compact ai-button" id="coWriteCampaign" type="button" disabled>Co-write campaign</button>
+                </div>
+              </div>
+              <div class="surface-body">
+                <div class="field-grid">
+                  <label class="field"><span>Product name <b class="required">*</b></span><input id="productName" type="text" maxlength="80" placeholder="Sola Barrier Serum"></label>
+                  <label class="field"><span>Product type</span><input id="productType" type="text" maxlength="120" placeholder="Daily ceramide face serum"></label>
+                  <label class="field full"><span>Target audience <b class="required">*</b></span><input id="audience" type="text" maxlength="180" placeholder="People with dry, reactive skin"></label>
+                  <label class="field full"><span>Core benefit <b class="required">*</b></span><textarea id="benefit" maxlength="360" placeholder="The result your customer cares about"></textarea></label>
+                  <label class="field"><span>Proof point</span><input id="proof" type="text" maxlength="180" placeholder="Ceramides, fragrance-free, dermatologist tested"></label>
+                  <label class="field"><span>Call to action</span><input id="cta" type="text" maxlength="160" placeholder="Try the starter set"></label>
+                </div>
+                <div class="ai-note" id="aiNote" hidden></div>
+              </div>
+            </section>
+
+            <section class="surface">
+              <div class="surface-head">
+                <div class="surface-title"><span class="section-number">02</span><h2>Creator direction</h2></div>
+                <span class="section-status" id="creativeStatus">Product demo</span>
+              </div>
+              <div class="surface-body">
+                <div class="field-grid three">
+                  <label class="field"><span>Concept</span>
+                    <select id="concept">
+                      <option value="demo">Product demo</option>
+                      <option value="problem">Problem / solution</option>
+                      <option value="routine">Daily routine</option>
+                      <option value="testimonial">Testimonial</option>
+                      <option value="founder">Founder story</option>
+                    </select>
+                  </label>
+                  <label class="field"><span>Creator</span>
+                    <select id="creator">
+                      <option value="customer">Customer</option>
+                      <option value="expert">Category expert</option>
+                      <option value="founder">Founder</option>
+                      <option value="reviewer">Product reviewer</option>
+                    </select>
+                  </label>
+                  <label class="field"><span>Tone</span>
+                    <select id="tone">
+                      <option value="candid">Candid</option>
+                      <option value="warm">Warm</option>
+                      <option value="energetic">Energetic</option>
+                      <option value="dry">Dry humor</option>
+                      <option value="expert">Confident</option>
+                    </select>
+                  </label>
+                </div>
+
+                <div class="output-block">
+                  <div class="output-label-row"><span class="field-label">Primary hook</span><span class="field-label" id="hookLabel">Discovery</span></div>
+                  <div class="choice-group five" id="hookChoices" aria-label="Primary hook">
+                    <button type="button" data-value="discovery" class="active">Discovery</button>
+                    <button type="button" data-value="problem">Problem</button>
+                    <button type="button" data-value="proof">Proof</button>
+                    <button type="button" data-value="confession">Confession</button>
+                    <button type="button" data-value="hot_take">Hot take</button>
+                  </div>
+                </div>
+
+                <label class="field" style="margin-top:14px"><span>Spoken script <b class="required">*</b></span><textarea id="script" maxlength="1200" style="min-height:142px" placeholder="Natural, spoken copy for the creator"></textarea></label>
+                <label class="field" style="margin-top:14px"><span>Visual direction</span><textarea id="direction" maxlength="600" placeholder="Location, framing, product interaction, wardrobe, light"></textarea></label>
+
+                <div class="creative-toolbar">
+                  <span class="word-count" id="scriptCount">0 words</span>
+                  <div class="button-row">
+                    <button class="button" id="draftScript" type="button">Draft locally</button>
+                    <button class="button ai-button" id="refineScript" type="button" disabled>Refine script</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="surface">
+              <div class="surface-head">
+                <div class="surface-title"><span class="section-number">03</span><h2>Render prompts</h2></div>
+                <span class="section-status" id="promptStatus">Template</span>
+              </div>
+              <div class="surface-body">
+                <div class="prompt-toolbar">
+                  <label class="field"><span>Variant</span><select id="promptVariant" aria-label="Prompt variant"></select></label>
+                  <span class="prompt-summary" id="promptSummary">Variant 1 template</span>
+                </div>
+                <label class="field"><span>LTX-2.3 prompt</span><textarea id="promptPreview" maxlength="4000"></textarea></label>
+                <div class="creative-toolbar">
+                  <span class="word-count" id="promptCount">0 characters</span>
+                  <div class="button-row">
+                    <button class="button" id="resetPrompt" type="button" title="Restore this variant from the current brief">Reset selected</button>
+                    <button class="button ai-button" id="improvePrompts" type="button" disabled>Improve all with GLM-5.2</button>
+                    <button class="button primary" id="renderVariant" type="button">Render variant 1</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <aside class="production-column">
+            <section class="surface">
+              <div class="surface-head">
+                <div class="surface-title"><span class="section-number">04</span><h2>Product reference</h2></div>
+                <span class="section-status" id="referenceStatus">Optional</span>
+              </div>
+              <div class="surface-body">
+                <div class="reference-stage" id="referenceStage">
+                  <img id="kfpreview" alt="Selected product reference">
+                  <div class="reference-empty">
+                    <span class="reference-glyph">+</span>
+                    <strong>No reference selected</strong>
+                    <small>PNG, JPG or WebP</small>
+                  </div>
+                </div>
+                <div class="reference-actions">
+                  <select id="keyframe" aria-label="Product reference"><option value="">No reference</option></select>
+                  <label class="button upload-label" for="kfupload">Browse</label>
+                  <input type="file" id="kfupload" accept=".png,.jpg,.jpeg,.webp">
+                </div>
+                <div class="range-row">
+                  <label class="field" style="display:block"><span>Reference strength</span><input type="range" id="kfstrength" value="0.9" min="0.1" max="1" step="0.05"></label>
+                  <span class="range-value" id="strengthValue">90%</span>
+                </div>
+              </div>
+            </section>
+
+            <section class="surface">
+              <div class="surface-head">
+                <div class="surface-title"><span class="section-number">05</span><h2>Batch output</h2></div>
+                <span class="section-status" id="outputStatus">3 clips</span>
+              </div>
+              <div class="surface-body">
+                <div class="output-block">
+                  <div class="output-label-row"><span class="field-label">Placement</span><span class="field-label" id="formatLabel">9:16</span></div>
+                  <div class="choice-group" id="formatChoices" aria-label="Placement">
+                    <button type="button" data-value="vertical" class="active">Vertical</button>
+                    <button type="button" data-value="square">Square</button>
+                    <button type="button" data-value="landscape">Wide</button>
+                  </div>
+                </div>
+
+                <div class="output-block select-pair">
+                  <label class="field"><span>Duration</span>
+                    <select id="frames">
+                      <option value="97">4 sec</option>
+                      <option value="193" selected>8 sec</option>
+                      <option value="297">12 sec</option>
+                      <option value="377">15 sec</option>
+                      <option value="505">20 sec</option>
+                    </select>
+                  </label>
+                  <label class="field"><span>Variants</span>
+                    <select id="variants">
+                      <option value="1">1 clip</option>
+                      <option value="3" selected>3 clips</option>
+                      <option value="5">5 clips</option>
+                    </select>
+                  </label>
+                </div>
+
+                <details class="advanced">
+                  <summary>Render settings</summary>
+                  <div class="advanced-grid">
+                    <label class="field"><span>Frame rate</span>
+                      <select id="fps">
+                        <option value="25" selected>25 fps</option>
+                        <option value="20">20 fps</option>
+                        <option value="16">16 fps</option>
+                        <option value="12.5">12.5 fps</option>
+                      </select>
+                    </label>
+                    <label class="field"><span>Base seed</span><input type="number" id="seed" min="0" placeholder="Random"></label>
+                  </div>
+                </details>
+
+                <div class="batch-summary">
+                  <div class="variant-list" id="variantList"></div>
+                  <button class="button primary queue-button" id="queueBatch" type="button">Queue 3 variants</button>
+                  <div class="estimate" id="estimate">Approx. 9 min GPU time</div>
+                </div>
+              </div>
+            </section>
+
+            <section class="surface" id="latestPanel">
+              <div class="surface-head">
+                <div class="surface-title"><h2>Latest output</h2></div>
+                <button class="button compact" type="button" data-open-library>Open library</button>
+              </div>
+              <div class="latest-media" id="latestMedia">
+                <video id="latestPreview" muted playsinline preload="none"></video>
+                <button class="clip-play" id="latestPlay" type="button" aria-label="Play latest output" title="Play latest output" hidden>&#9654;</button>
+                <div class="latest-empty" id="latestEmpty">No rendered clips</div>
+                <div class="latest-caption" id="latestCaption" hidden><span id="latestName"></span><span id="latestSize"></span></div>
+              </div>
+            </section>
+          </aside>
+        </div>
+      </section>
+
+      <section class="view" id="view-queue">
+        <div class="page-frame">
+          <div class="page-tools">
+            <div class="stats">
+              <div class="stat"><strong id="activeCount">0</strong> active</div>
+              <div class="stat"><strong id="waitingCount">0</strong> waiting</div>
+              <div class="stat"><strong id="completeCount">0</strong> complete</div>
+            </div>
+            <button class="button" type="button" id="refreshQueue">Refresh</button>
+          </div>
+          <section class="surface queue-list" id="jobs">
+            <div class="queue-empty"><div><span class="empty-mark">Q</span>No jobs in this session</div></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="view" id="view-library">
+        <div class="page-frame">
+          <div class="page-tools">
+            <div class="stats"><div class="stat"><strong id="libraryCount">0</strong> rendered clips</div></div>
+            <input class="search" type="search" id="librarySearch" placeholder="Search filenames" aria-label="Search rendered clips">
+          </div>
+          <div class="library-grid" id="gallery"></div>
+        </div>
+      </section>
+    </main>
+  </section>
 </div>
 
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
 <script>
-const PRESETS = [
-  ["Aleph token flow (photoreal)", "Photorealistic cinematic shot in a vast dark server hall at night. Thin fiber-optic light strands of cool white light flow from the left through the darkness into a real glass prism mounted on a matte black pedestal at center frame, the camera pushing in very slowly and steadily. The prism interior glows deep violet, refracting light across its polished faces. On its right side, the light exits as four separate luminous lime-green fiber channels of clearly different thickness, the widest on top, running in parallel toward the right edge where they disappear into the dark. Microscopic dust particles drift through the beams. The background shows blurred rows of dark server racks with tiny violet status LEDs, heavy bokeh. Volumetric light, deep blacks, high contrast, shallow depth of field, anamorphic feel, slow steady camera push, photorealistic detail, ultra sharp."],
-  ["Aleph confidential compute", "A tall obsidian-black monolithic server machine stands alone in a dim concrete hall, its surface completely smooth and sealed with no windows or vents, while a narrow seam of deep violet light pulses slowly along its edges, showing that it is working. The camera orbits the monolith in a slow, steady arc. In the polished floor around it, faint reflections of moving figures pass by, but the machine's black surface reflects nothing back and reveals nothing of its interior. Thin wisps of cool mist drift low across the floor. A single shaft of pale light falls from high above, catching dust particles in the air. Color palette of near-black, deep violet, and cold grey, one thin lime-green status line glowing steadily near the machine's base. Cinematic, quiet, monumental mood, slow constant camera movement, shallow depth of field, photorealistic, ultra sharp."],
-  ["LibertAI terminal engine", "Extreme close-up of a glowing rectangular cursor blinking in the dark, then the camera pulls back smoothly and continuously to reveal that the glow comes from a massive industrial machine core suspended in a vast dark hall, burning bright amber-orange from within like a furnace made of circuitry. Rows of dark server racks with faint violet and magenta accent lights recede into the depth on both sides, their edges catching the orange glow. Cables arc from the ceiling toward the core. Heat shimmer rises gently above the machine, and small embers of light drift upward like sparks. The pullback keeps the burning core perfectly centered as the scale becomes monumental. Dark moody industrial atmosphere, cinematic volumetric light, deep blacks, saturated amber core against cool violet shadows, steady seamless camera pullback, photorealistic detail, ultra sharp."],
+const $ = (id) => document.getElementById(id);
+
+const DEFAULT_DRAFT = {
+  productName: "Sola Barrier Serum",
+  productType: "Daily ceramide face serum",
+  audience: "People with dry, reactive skin who want a simple routine",
+  benefit: "It leaves skin feeling calm and comfortably hydrated without a heavy or sticky finish.",
+  proof: "Ceramides, fragrance-free, dermatologist tested",
+  cta: "Try the Sola starter set",
+  concept: "demo",
+  creator: "customer",
+  tone: "candid",
+  hook: "discovery",
+  direction: "A bright lived-in bathroom in the morning. Handheld front-facing phone camera at arm's length, natural window light, casual neutral clothes. The creator holds the serum close to camera, dispenses one drop, applies it to one cheek, then looks back into the lens.",
+  format: "vertical",
+  frames: "193",
+  fps: "25",
+  variants: "3",
+  seed: "",
+  kfstrength: "0.9"
+};
+
+const HOOKS = ["discovery", "problem", "proof", "confession", "hot_take"];
+const HOOK_LABELS = {
+  discovery: "Discovery",
+  problem: "Problem first",
+  proof: "Proof point",
+  confession: "Confession",
+  hot_take: "Hot take"
+};
+const FORMAT = {
+  vertical: { width: 1088, height: 1920, label: "9:16", direction: "vertical smartphone framing" },
+  square: { width: 1280, height: 1280, label: "1:1", direction: "square social-feed framing" },
+  landscape: { width: 1920, height: 1088, label: "16:9", direction: "horizontal social-video framing" }
+};
+const CREATOR = {
+  customer: "a relatable customer in their late twenties",
+  expert: "a credible category expert in their thirties",
+  founder: "the approachable founder of the product",
+  reviewer: "an experienced independent product reviewer"
+};
+const TONE = {
+  candid: "candid, conversational, and slightly imperfect",
+  warm: "warm, reassuring, and personal",
+  energetic: "upbeat, quick, and genuinely excited",
+  dry: "understated with dry, natural humor",
+  expert: "clear, confident, and matter-of-fact"
+};
+const CONCEPT_ACTION = {
+  demo: "demonstrates the product in one simple continuous action",
+  problem: "starts with the familiar problem and reveals the product as the practical solution",
+  routine: "shows where the product fits naturally into a real daily routine",
+  testimonial: "shares a specific first-person experience while holding and using the product",
+  founder: "explains why the product was made while showing its most important detail"
+};
+const CONCEPT_LABELS = {
+  demo: "Product demo",
+  problem: "Problem / solution",
+  routine: "Daily routine",
+  testimonial: "Testimonial",
+  founder: "Founder story"
+};
+
+const state = {
+  hook: "discovery",
+  format: "vertical",
+  aiConfigured: false,
+  aiModel: "glm-5.2",
+  aiBusy: false,
+  prompts: [],
+  promptSources: [],
+  promptFingerprint: "",
+  variantSeeds: [],
+  refreshBusy: false,
+  jobs: [],
+  gallery: [],
+  keyframes: [],
+  currentView: "create",
+  lastGalleryKey: "",
+  lastKeyframeKey: "",
+  readyReported: false,
+  latestFile: ""
+};
+
+const CLIENT_BUILD = "20260714.4";
+
+const persistIds = [
+  "productName", "productType", "audience", "benefit", "proof", "cta",
+  "concept", "creator", "tone", "script", "direction", "frames", "fps",
+  "variants", "seed", "kfstrength"
 ];
 
-const $ = (id) => document.getElementById(id);
-const chips = $("chips");
-for (const [name, text] of PRESETS) {
-  const b = document.createElement("button");
-  b.className = "chip"; b.textContent = name;
-  b.onclick = () => { $("prompt").value = text; };
-  chips.appendChild(b);
+function value(id) { return $(id).value.trim(); }
+
+function mediaUrl(file) {
+  return `/preview/${encodeURIComponent(file)}`;
 }
 
-async function loadKeyframes(selectName) {
-  const names = await fetch("/api/keyframes").then(r => r.json());
-  const sel = $("keyframe");
-  const cur = selectName ?? sel.value;
-  sel.innerHTML = '<option value="">none (text only)</option>' +
-    names.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join("");
-  sel.value = names.includes(cur) ? cur : "";
-  sel.onchange = () => {
-    const p = $("kfpreview");
-    if (sel.value) { p.src = "/keyframes/" + encodeURIComponent(sel.value); p.style.display = "block"; }
-    else p.style.display = "none";
+function reportClientEvent(kind, message = "") {
+  fetch("/api/client-events", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      kind,
+      message: String(message).slice(0, 500),
+      build: CLIENT_BUILD,
+      href: window.location.href
+    }),
+    keepalive: true
+  }).catch(() => {});
+}
+
+window.addEventListener("error", event => reportClientEvent("window-error", event.message));
+window.addEventListener("unhandledrejection", event => {
+  reportClientEvent("unhandled-rejection", event.reason?.message || event.reason);
+});
+
+function esc(input) {
+  const node = document.createElement("div");
+  node.textContent = String(input ?? "");
+  return node.innerHTML;
+}
+
+function showToast(message, isError = false) {
+  const toast = $("toast");
+  toast.textContent = message;
+  toast.classList.toggle("error", isError);
+  toast.classList.add("show");
+  clearTimeout(showToast.timer);
+  showToast.timer = setTimeout(() => toast.classList.remove("show"), 3400);
+}
+
+async function fetchWithTimeout(resource, options = {}, timeoutMs = 10000) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(resource, { ...options, signal: controller.signal });
+  } catch (error) {
+    if (error.name === "AbortError") throw new Error("Request timed out");
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function hookSentence(hook, data) {
+  const product = data.productName || "this product";
+  const proof = (data.proof || data.productType || "the details are genuinely thoughtful").replace(/[.!?]+$/, "");
+  const conciseProof = wordCount(proof) <= 5 ? proof.toLowerCase() : "thoughtful details";
+  const hooks = {
+    discovery: `${product} made my routine feel easier than I expected.`,
+    problem: `I wanted fewer steps, and ${product} made my routine simpler.`,
+    proof: `${product} stood out to me because of its ${conciseProof}.`,
+    confession: `I nearly skipped ${product}, but now it stays in my routine.`,
+    hot_take: `Hot take: ${product} should make your routine simpler, not busier.`
   };
-  sel.onchange();
+  return hooks[hook] || hooks.discovery;
 }
 
-$("kfupload").onchange = async () => {
-  const f = $("kfupload").files[0];
-  if (!f) return;
-  const fd = new FormData();
-  fd.append("file", f);
-  const r = await fetch("/api/keyframes", { method: "POST", body: fd });
-  if (r.ok) { const { name } = await r.json(); await loadKeyframes(name); }
-  else alert("upload failed");
-};
+function buildDraftScript(hook = state.hook) {
+  const data = getBrief();
+  const opener = hookSentence(hook, data);
+  const product = data.productName || "the product";
+  const benefit = (data.benefit || "It fits easily into my routine").replace(/^[a-z]/, c => c.toUpperCase()).replace(/[.!?]+$/, "");
+  const proof = data.proof ? ` What matters to me is that it is ${data.proof.toLowerCase()}.` : "";
+  const cta = data.cta ? ` ${data.cta.replace(/[.!?]+$/, "")}.` : "";
+  const conceptLines = {
+    demo: `Here is how I use it: one small amount, then I work it in. ${benefit}.`,
+    problem: `I wanted something that solved that without adding five more steps. ${product} keeps it simple, and ${benefit.replace(/^It /, "it ")}.`,
+    routine: `This is the part of my routine I can stay consistent with. I use ${product} right here, and ${benefit.replace(/^It /, "it ")}.`,
+    testimonial: `After making ${product} part of my routine, the biggest difference is simple: ${benefit.replace(/^It /, "it ")}.`,
+    founder: `We made ${product} because the usual options asked people to compromise. The goal was simple: ${benefit.toLowerCase()}.`
+  };
+  const draft = `${opener} ${conceptLines[data.concept] || conceptLines.demo}${proof}${cta}`.replace(/\s+/g, " ").trim();
+  return fitScriptToBudget(draft, speechWordBudget(durationSeconds()));
+}
 
-$("go").onclick = async () => {
-  const prompt = $("prompt").value.trim();
-  if (prompt.length < 10) { alert("Write a prompt first."); return; }
-  const [w, h] = $("format").value.split("x").map(Number);
-  const body = { prompt, width: w, height: h, num_frames: Number($("frames").value), frame_rate: 25.0 };
-  const seed = $("seed").value.trim();
-  if (seed !== "") body.seed = Number(seed);
+function getBrief() {
+  return {
+    productName: value("productName"),
+    productType: value("productType"),
+    audience: value("audience"),
+    benefit: value("benefit"),
+    proof: value("proof"),
+    cta: value("cta"),
+    concept: $("concept").value,
+    creator: $("creator").value,
+    tone: $("tone").value
+  };
+}
+
+function durationSeconds() {
+  return (Number($("frames").value) - 1) / Number($("fps").value);
+}
+
+function speechWordBudget(seconds = durationSeconds()) {
+  return Math.max(4, Math.floor(Math.max(1, seconds - 0.75) * 2.1));
+}
+
+function wordCount(text) {
+  return String(text || "").trim().split(/\s+/).filter(Boolean).length;
+}
+
+function fitScriptToBudget(script, maxWords) {
+  if (wordCount(script) <= maxWords) return script.trim();
+  const sentences = script.trim().split(/(?<=[.!?])\s+/);
+  const fitted = [];
+  for (const sentence of sentences) {
+    const candidate = [...fitted, sentence].join(" ");
+    if (wordCount(candidate) > maxWords) break;
+    fitted.push(sentence);
+  }
+  if (fitted.length) return fitted.join(" ");
+  const clipped = script.trim().split(/\s+/).slice(0, maxWords).join(" ").replace(/[ ,;:-]+$/, "");
+  return /[.!?]$/.test(clipped) ? clipped : `${clipped}.`;
+}
+
+function promptSpokenWordCount(prompt) {
+  const pattern = /(?:says?(?:\s+exactly)?|speaks?|speaking|saying|dialogue(?:\s+is)?)[^"“\n]{0,120}["“]([^"”]+)["”]/gi;
+  return [...String(prompt || "").matchAll(pattern)].reduce((total, match) => total + wordCount(match[1]), 0);
+}
+
+function promptDurationProblem(prompt, index) {
+  const spokenWords = promptSpokenWordCount(prompt);
+  const maxWords = speechWordBudget();
+  if (spokenWords <= maxWords) return null;
+  return {
+    index,
+    spokenWords,
+    maxWords,
+    message: `Variant ${index + 1} has ${spokenWords} spoken words; ${maxWords} max for ${Math.round(durationSeconds())} sec`
+  };
+}
+
+function showPromptDurationProblem(problem) {
+  $("promptVariant").value = String(problem.index);
+  renderPromptEditor();
+  showToast(problem.message, true);
+  $("promptPreview").focus();
+}
+
+function getCreativeContext() {
+  const brief = getBrief();
+  return {
+    product_name: brief.productName,
+    product_type: brief.productType,
+    audience: brief.audience,
+    benefit: brief.benefit,
+    proof: brief.proof,
+    cta: brief.cta,
+    concept: brief.concept,
+    creator: brief.creator,
+    tone: brief.tone,
+    hook: state.hook,
+    script: value("script"),
+    direction: value("direction"),
+    format_label: FORMAT[state.format].label,
+    duration_seconds: Number(durationSeconds().toFixed(2)),
+    variant_count: Number($("variants").value)
+  };
+}
+
+function currentPromptFingerprint() {
+  return JSON.stringify(getCreativeContext());
+}
+
+function replaceOpening(script, nextHook) {
+  const parts = script.trim().split(/(?<=[.!?])\s+/);
+  const replacement = parts.length < 2 ? nextHook : [nextHook, ...parts.slice(1)].join(" ");
+  return fitScriptToBudget(replacement, speechWordBudget());
+}
+
+function buildPrompt(variantIndex) {
+  const data = getBrief();
+  const hookIndex = (HOOKS.indexOf(state.hook) + variantIndex) % HOOKS.length;
+  const hook = HOOKS[hookIndex];
+  const baseScript = value("script") || buildDraftScript(state.hook);
+  const spoken = variantIndex === 0 ? baseScript : replaceOpening(baseScript, hookSentence(hook, data));
+  const format = FORMAT[state.format];
+  const seconds = durationSeconds();
+  const finishAt = Math.max(1, seconds - 0.75).toFixed(2).replace(/\.00$/, "");
+  const cameraMoves = [
+    "The framing has subtle natural hand movement and one gentle push closer when the product is shown.",
+    "The creator begins in a medium selfie shot, then naturally brings the product close to the lens before returning to eye contact.",
+    "The take opens on the product in hand, tilts up to the creator's face, and stays intimate and handheld."
+  ];
+  const environment = value("direction") || "A real, lived-in home interior with soft daylight, casual styling, and natural handheld phone framing.";
+  const type = data.productType ? `${data.productName}, ${data.productType}` : data.productName;
+  return [
+    `Authentic creator-style social video in ${format.direction}, captured on a modern smartphone as one continuous take.`,
+    `${CREATOR[data.creator] || CREATOR.customer} ${CONCEPT_ACTION[data.concept] || CONCEPT_ACTION.demo}.`,
+    `${environment}`,
+    `${cameraMoves[variantIndex % cameraMoves.length]}`,
+    `The product is ${type || "the featured product"}; its shape, packaging, and color remain consistent throughout the shot.`,
+    `The performance is ${TONE[data.tone] || TONE.candid}, with direct eye contact, natural gestures, realistic pauses, and accurate lip sync.`,
+    `The creator says exactly: "${spoken.replace(/"/g, "'")}"`,
+    `The spoken line and one simple primary product action finish by ${finishAt} seconds, followed by a natural silent hold through the end of the ${Math.round(seconds)}-second take.`,
+    "Natural room tone and clear close-recorded speech. Spoken words are audio only and never appear visually. The frame contains no subtitles, captions, title cards, watermarks, interface elements, or generated readable text. Clothing and the set are plain and unbranded with no lettering. Any screen is oblique, defocused, or too small to read; unavoidable packaging lettering stays consistent with the supplied reference or remains too small to read. No lower thirds, transitions, or floating graphics. Photorealistic skin texture, believable hands, everyday lighting, real UGC rather than a polished commercial."
+  ].join(" ");
+}
+
+function renderPromptMetrics(prompt) {
+  const spokenWords = promptSpokenWordCount(prompt);
+  const maxWords = speechWordBudget();
+  const overLimit = spokenWords > maxWords;
+  $("promptCount").textContent = spokenWords
+    ? `${prompt.length} characters · ${spokenWords}/${maxWords} spoken words`
+    : `${prompt.length} characters`;
+  $("promptCount").classList.toggle("warning", overLimit);
+}
+
+function renderPromptEditor() {
+  const select = $("promptVariant");
+  const count = Number($("variants").value);
+  const previous = Math.min(Number(select.value || 0), count - 1);
+  const start = HOOKS.indexOf(state.hook);
+  select.replaceChildren();
+  for (let index = 0; index < count; index += 1) {
+    const option = document.createElement("option");
+    option.value = String(index);
+    option.textContent = `Variant ${index + 1} - ${HOOK_LABELS[HOOKS[(start + index) % HOOKS.length]]}`;
+    select.appendChild(option);
+  }
+  select.value = String(previous);
+  const prompt = state.prompts[previous] ?? buildPrompt(previous);
+  $("promptPreview").value = prompt;
+  const source = state.promptSources[previous] || "template";
+  const sourceLabel = { template: "Template", glm: "GLM-5.2 refined", edited: "Manually edited" }[source];
+  $("promptStatus").textContent = sourceLabel || "Template";
+  $("promptSummary").textContent = `Variant ${previous + 1} · ${HOOK_LABELS[HOOKS[(start + previous) % HOOKS.length]]} · ${FORMAT[state.format].label}`;
+  renderPromptMetrics(prompt);
+  $("renderVariant").textContent = `Render variant ${previous + 1}`;
+}
+
+function syncPrompts(force = false) {
+  const fingerprint = currentPromptFingerprint();
+  const count = Number($("variants").value);
+  if (force || fingerprint !== state.promptFingerprint || state.prompts.length !== count) {
+    const previousPrompts = state.prompts;
+    const previousSources = state.promptSources;
+    state.prompts = Array.from({ length: count }, (_, index) => {
+      if (!force && previousSources[index] === "edited") return previousPrompts[index];
+      return buildPrompt(index);
+    });
+    state.promptSources = Array.from({ length: count }, (_, index) =>
+      !force && previousSources[index] === "edited" ? "edited" : "template"
+    );
+    state.promptFingerprint = fingerprint;
+  }
+  renderPromptEditor();
+}
+
+function resetSelectedPrompt() {
+  const index = Number($("promptVariant").value || 0);
+  const source = state.promptSources[index] || "template";
+  if (source !== "template" && !window.confirm(`Discard the changes to variant ${index + 1} and restore its template?`)) return;
+  state.prompts[index] = buildPrompt(index);
+  state.promptSources[index] = "template";
+  state.promptFingerprint = currentPromptFingerprint();
+  renderPromptEditor();
+  saveDraft();
+  showToast(`Variant ${index + 1} reset from the current brief`);
+}
+
+function setChoice(groupId, nextValue) {
+  const group = $(groupId);
+  group.querySelectorAll("button").forEach(button => {
+    button.classList.toggle("active", button.dataset.value === nextValue);
+  });
+}
+
+let saveTimer;
+function saveDraft() {
+  clearTimeout(saveTimer);
+  $("saveState").textContent = "Saving...";
+  saveTimer = setTimeout(() => {
+    const draft = {
+      hook: state.hook,
+      format: state.format,
+      prompts: state.prompts,
+      promptSources: state.promptSources,
+      promptFingerprint: state.promptFingerprint,
+      variantSeeds: state.variantSeeds
+    };
+    persistIds.forEach(id => { draft[id] = $(id).value; });
+    try { localStorage.setItem("ugc-factory-draft", JSON.stringify(draft)); } catch (_) {}
+    $("saveState").textContent = "Saved locally";
+  }, 350);
+}
+
+function applyDraft(draft) {
+  const source = { ...DEFAULT_DRAFT, ...(draft || {}) };
+  persistIds.forEach(id => {
+    if (source[id] !== undefined && $(id)) $(id).value = source[id];
+  });
+  state.hook = source.hook || DEFAULT_DRAFT.hook;
+  state.format = source.format || DEFAULT_DRAFT.format;
+  state.prompts = Array.isArray(draft?.prompts) ? draft.prompts.filter(prompt => typeof prompt === "string") : [];
+  state.promptSources = Array.isArray(draft?.promptSources) ? draft.promptSources.map(item =>
+    ["template", "glm", "edited"].includes(item) ? item : "template"
+  ) : [];
+  state.promptFingerprint = typeof draft?.promptFingerprint === "string" ? draft.promptFingerprint : "";
+  state.variantSeeds = Array.isArray(draft?.variantSeeds) ? draft.variantSeeds.map(seed =>
+    Number.isInteger(seed) ? seed : null
+  ) : [];
+  setChoice("hookChoices", state.hook);
+  setChoice("formatChoices", state.format);
+  if (!value("script")) $("script").value = buildDraftScript();
+  updateUI();
+}
+
+function loadDraft() {
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem("ugc-factory-draft")); } catch (_) {}
+  applyDraft(saved);
+}
+
+function resetDraft() {
+  if (!window.confirm("Reset the current brief and script?")) return;
+  try { localStorage.removeItem("ugc-factory-draft"); } catch (_) {}
+  applyDraft(DEFAULT_DRAFT);
+  $("script").value = buildDraftScript();
+  updateUI();
+  saveDraft();
+  showToast("Brief reset");
+}
+
+function updateUI() {
+  const seconds = Math.round(durationSeconds());
+  const scriptWords = wordCount(value("script"));
+  const targetWords = speechWordBudget();
+  const scriptOverLimit = scriptWords > targetWords;
+  $("scriptCount").textContent = scriptOverLimit
+    ? `${scriptWords} words · ${scriptWords - targetWords} over the ${targetWords}-word max`
+    : `${scriptWords} words · ${targetWords} max`;
+  $("scriptCount").classList.toggle("warning", scriptOverLimit);
+  $("creativeStatus").textContent = CONCEPT_LABELS[$("concept").value] || "Creator video";
+  $("hookLabel").textContent = HOOK_LABELS[state.hook];
+  $("formatLabel").textContent = FORMAT[state.format].label;
+  $("strengthValue").textContent = `${Math.round(Number($("kfstrength").value) * 100)}%`;
+  const count = Number($("variants").value);
+  $("outputStatus").textContent = `${count} clip${count === 1 ? "" : "s"}`;
+  $("queueBatch").textContent = count === 1 ? "Queue render" : `Queue ${count} variants`;
+  const minutes = Math.max(1, Math.round(count * seconds * 3 / 8));
+  $("estimate").textContent = `Approx. ${minutes} min GPU time`;
+  const filled = ["productName", "audience", "benefit"].filter(id => value(id)).length;
+  $("briefStatus").textContent = filled === 3 ? "Brief ready" : `${filled}/3 required`;
+  renderVariantList();
+  syncPrompts();
+}
+
+function renderVariantList() {
+  const count = Number($("variants").value);
+  const start = HOOKS.indexOf(state.hook);
+  $("variantList").innerHTML = Array.from({ length: count }, (_, index) => {
+    const hook = HOOKS[(start + index) % HOOKS.length];
+    const seed = value("seed") ? Number(value("seed")) + index :
+      Number.isInteger(state.variantSeeds[index]) ? state.variantSeeds[index] : "random";
+    return `<div class="variant-row"><span class="variant-dot">${String(index + 1).padStart(2, "0")}</span><strong>${esc(HOOK_LABELS[hook])}</strong><span>seed ${esc(seed)}</span></div>`;
+  }).join("");
+}
+
+function selectHook(next) {
+  state.hook = next;
+  setChoice("hookChoices", next);
+  updateUI();
+  saveDraft();
+}
+
+function selectFormat(next) {
+  state.format = next;
+  setChoice("formatChoices", next);
+  updateUI();
+  saveDraft();
+}
+
+function draftScript() {
+  const missing = ["productName", "audience", "benefit"].filter(id => !value(id));
+  if (missing.length) {
+    showToast("Complete the required brief fields first", true);
+    $(missing[0]).focus();
+    return;
+  }
+  $("script").value = buildDraftScript();
+  updateUI();
+  saveDraft();
+  showToast("Script drafted from brief");
+}
+
+function updateAIControls() {
+  document.querySelectorAll(".ai-button").forEach(button => {
+    button.disabled = state.aiBusy || !state.aiConfigured;
+    button.title = state.aiConfigured ? "" : "Set LIBERTAI_API_KEY on the server and restart";
+  });
+}
+
+function setAIBusy(busy) {
+  state.aiBusy = busy;
+  updateAIControls();
+  $("aiEngineMeta").textContent = busy ? "Co-writer working" :
+    state.aiConfigured ? "Co-writer ready" : "API key required";
+}
+
+function applyAIStatus(status = {}) {
+  state.aiConfigured = Boolean(status.configured);
+  state.aiModel = status.model || "glm-5.2";
+  $("aiEngineLabel").textContent = state.aiModel.toUpperCase();
+  $("aiConnectionDot").className = `connection-dot ${state.aiConfigured ? "online" : "offline"}`;
+  $("aiEngineMeta").textContent = state.aiConfigured ? "Co-writer ready" : "API key required";
+  updateAIControls();
+}
+
+async function apiError(response, fallback) {
+  const payload = await response.json().catch(() => ({}));
+  return new Error(payload.detail || fallback);
+}
+
+function applyAIFields(fields) {
+  const textFields = {
+    product_name: "productName",
+    product_type: "productType",
+    audience: "audience",
+    benefit: "benefit",
+    proof: "proof",
+    cta: "cta",
+    script: "script",
+    direction: "direction"
+  };
+  Object.entries(textFields).forEach(([key, id]) => {
+    if (typeof fields[key] === "string" && fields[key].trim()) $(id).value = fields[key].trim();
+  });
+  ["concept", "creator", "tone"].forEach(key => {
+    if (typeof fields[key] === "string") $(key).value = fields[key];
+  });
+  if (typeof fields.hook === "string" && HOOKS.includes(fields.hook)) {
+    state.hook = fields.hook;
+    setChoice("hookChoices", state.hook);
+  }
+  const notes = Array.isArray(fields.notes) ? fields.notes.filter(Boolean) : [];
+  $("aiNote").hidden = notes.length === 0;
+  $("aiNote").textContent = notes.length ? `GLM assumptions: ${notes.join(" ")}` : "";
+  updateUI();
+  saveDraft();
+}
+
+async function improvePromptsCore() {
+  syncPrompts();
+  const durationProblem = state.prompts
+    .map((prompt, index) => promptDurationProblem(prompt, index))
+    .find(Boolean);
+  if (durationProblem) {
+    $("promptVariant").value = String(durationProblem.index);
+    renderPromptEditor();
+    $("promptPreview").focus();
+    throw new Error(durationProblem.message);
+  }
+  $("promptStatus").textContent = `${state.aiModel.toUpperCase()} working`;
+  $("promptStatus").classList.add("ai-working");
+  const response = await fetchWithTimeout("/api/ai/improve-prompts", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...getCreativeContext(), base_prompts: state.prompts })
+  }, 130000);
+  if (!response.ok) throw await apiError(response, "Prompt improvement failed");
+  const result = await response.json();
+  state.aiModel = result.model || state.aiModel;
+  state.prompts = result.prompts;
+  state.promptSources = Array(result.prompts.length).fill("glm");
+  state.promptFingerprint = currentPromptFingerprint();
+  $("promptStatus").classList.remove("ai-working");
+  renderPromptEditor();
+  saveDraft();
+  return result;
+}
+
+async function coWrite(mode) {
+  if (!state.aiConfigured) {
+    showToast("Set LIBERTAI_API_KEY on the server and restart", true);
+    return;
+  }
+  if (!value("productName") && !value("productType")) {
+    showToast("Add a product name or type before co-writing", true);
+    $("productName").focus();
+    return;
+  }
+  const button = mode === "campaign" ? $("coWriteCampaign") : $("refineScript");
+  const original = button.textContent;
+  stopLatestPreview();
+  setAIBusy(true);
+  button.textContent = mode === "campaign" ? "Co-writing fields..." : "Refining script...";
+  try {
+    const response = await fetchWithTimeout("/api/ai/write", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...getCreativeContext(), mode })
+    }, 130000);
+    if (!response.ok) throw await apiError(response, "Co-writing failed");
+    const result = await response.json();
+    state.aiModel = result.model || state.aiModel;
+    applyAIFields(result.fields || {});
+    if (mode === "campaign") {
+      button.textContent = "Improving prompts...";
+      await improvePromptsCore();
+      showToast(`Campaign and render prompts co-written with ${state.aiModel.toUpperCase()}`);
+    } else {
+      showToast(`Script refined with ${state.aiModel.toUpperCase()}`);
+    }
+  } catch (error) {
+    $("promptStatus").classList.remove("ai-working");
+    renderPromptEditor();
+    showToast(error.message, true);
+  } finally {
+    button.textContent = original;
+    setAIBusy(false);
+  }
+}
+
+async function improvePrompts() {
+  if (!state.aiConfigured) {
+    showToast("Set LIBERTAI_API_KEY on the server and restart", true);
+    return;
+  }
+  const button = $("improvePrompts");
+  const original = button.textContent;
+  stopLatestPreview();
+  setAIBusy(true);
+  button.textContent = "Improving variants...";
+  try {
+    await improvePromptsCore();
+    showToast(`${state.prompts.length} prompt${state.prompts.length === 1 ? "" : "s"} improved with ${state.aiModel.toUpperCase()}`);
+  } catch (error) {
+    $("promptStatus").classList.remove("ai-working");
+    renderPromptEditor();
+    showToast(error.message, true);
+  } finally {
+    button.textContent = original;
+    setAIBusy(false);
+  }
+}
+
+function generationBody(index, prompt, reuseVariantSeed = false) {
+  const format = FORMAT[state.format];
+  const baseSeed = value("seed") === "" ? null : Number(value("seed"));
+  const body = {
+    prompt,
+    width: format.width,
+    height: format.height,
+    num_frames: Number($("frames").value),
+    frame_rate: Number($("fps").value)
+  };
+  if (baseSeed !== null) body.seed = baseSeed + index;
+  else if (reuseVariantSeed && Number.isInteger(state.variantSeeds[index])) body.seed = state.variantSeeds[index];
   if ($("keyframe").value) {
     body.keyframe = $("keyframe").value;
-    body.keyframe_strength = Number($("kfstrength").value) || 0.9;
+    body.keyframe_strength = Number($("kfstrength").value);
   }
-  $("go").disabled = true;
+  return body;
+}
+
+async function submitVariant(index, prompt, reuseVariantSeed = false) {
+  stopLatestPreview();
+  const response = await fetchWithTimeout("/api/generate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(generationBody(index, prompt, reuseVariantSeed))
+  }, 15000);
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.detail || "Render request failed");
+  }
+  const result = await response.json();
+  if (Number.isInteger(result.seed)) state.variantSeeds[index] = result.seed;
+  return result;
+}
+
+async function renderSelectedVariant() {
+  const index = Number($("promptVariant").value || 0);
+  const prompt = $("promptPreview").value;
+  if (prompt.trim().length < 10) {
+    showToast("The render prompt is too short", true);
+    $("promptPreview").focus();
+    return;
+  }
+  const durationProblem = promptDurationProblem(prompt, index);
+  if (durationProblem) {
+    showPromptDurationProblem(durationProblem);
+    return;
+  }
+
+  state.prompts[index] = prompt;
+  const button = $("renderVariant");
+  const original = button.textContent;
+  button.disabled = true;
+  button.textContent = `Queuing variant ${index + 1}...`;
+  saveDraft();
   try {
-    const r = await fetch("/api/generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-    if (!r.ok) alert((await r.json()).detail || "request failed");
-  } finally { $("go").disabled = false; refresh(); }
-};
+    await submitVariant(index, prompt, true);
+    saveDraft();
+    await refresh();
+    switchView("queue");
+    showToast(`Variant ${index + 1} added to the queue with your current prompt`);
+  } catch (error) {
+    showToast(error.message, true);
+  } finally {
+    button.disabled = false;
+    button.textContent = original;
+  }
+}
 
-function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+async function queueBatch() {
+  const required = ["productName", "audience", "benefit", "script"];
+  const missing = required.find(id => !value(id));
+  if (missing) {
+    showToast("Complete the required brief and script", true);
+    $(missing).focus();
+    return;
+  }
+  if (value("script").length < 10) {
+    showToast("The spoken script is too short", true);
+    $("script").focus();
+    return;
+  }
 
-// Re-rendering with innerHTML kills playing <video> elements, so each section
-// only re-renders when its content actually changed, and the gallery also
-// waits while any of its videos is playing.
-let lastJobsHTML = "", lastGalleryKey = "";
+  const button = $("queueBatch");
+  const original = button.textContent;
+  const count = Number($("variants").value);
+  syncPrompts();
+  const durationProblem = state.prompts
+    .map((prompt, index) => promptDurationProblem(prompt, index))
+    .find(Boolean);
+  if (durationProblem) {
+    showPromptDurationProblem(durationProblem);
+    return;
+  }
+  button.disabled = true;
+
+  let queued = 0;
+  try {
+    for (let index = 0; index < count; index += 1) {
+      button.textContent = `Queuing ${index + 1} of ${count}`;
+      await submitVariant(index, state.prompts[index] ?? buildPrompt(index));
+      queued += 1;
+    }
+    await refresh();
+    switchView("queue");
+    showToast(`${queued} render${queued === 1 ? "" : "s"} added to the queue`);
+  } catch (error) {
+    showToast(`${queued ? `${queued} queued. ` : ""}${error.message}`, true);
+    await refresh();
+  } finally {
+    button.disabled = false;
+    button.textContent = original;
+    saveDraft();
+    updateUI();
+  }
+}
+
+function updateReferencePreview() {
+  const selected = $("keyframe").value;
+  const stage = $("referenceStage");
+  if (selected) {
+    $("kfpreview").src = `/keyframes/${encodeURIComponent(selected)}`;
+    stage.classList.add("has-image");
+    $("referenceStatus").textContent = "Conditioned";
+  } else {
+    $("kfpreview").removeAttribute("src");
+    stage.classList.remove("has-image");
+    $("referenceStatus").textContent = "Optional";
+  }
+}
+
+function renderKeyframes(names, selectName) {
+  const key = names.join("|");
+  if (selectName === undefined && key === state.lastKeyframeKey) return;
+  state.lastKeyframeKey = key;
+  const select = $("keyframe");
+  const current = selectName ?? select.value;
+  select.replaceChildren();
+  const empty = document.createElement("option");
+  empty.value = "";
+  empty.textContent = "No reference";
+  select.appendChild(empty);
+  names.forEach(name => {
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+    select.appendChild(option);
+  });
+  select.value = names.includes(current) ? current : "";
+  updateReferencePreview();
+}
+
+async function uploadKeyframe(file) {
+  if (!file) return;
+  if (!/\.(png|jpe?g|webp)$/i.test(file.name)) {
+    showToast("Reference must be PNG, JPG or WebP", true);
+    return;
+  }
+  const form = new FormData();
+  form.append("file", file);
+  stopLatestPreview();
+  $("referenceStatus").textContent = "Uploading...";
+  try {
+    const response = await fetchWithTimeout("/api/keyframes", { method: "POST", body: form }, 30000);
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || "Upload failed");
+    }
+    const result = await response.json();
+    state.keyframes = [...new Set([...state.keyframes, result.name])].sort();
+    renderKeyframes(state.keyframes, result.name);
+    showToast("Product reference uploaded");
+  } catch (error) {
+    $("referenceStatus").textContent = "Upload failed";
+    showToast(error.message, true);
+  } finally {
+    $("kfupload").value = "";
+  }
+}
+
+function jobTitle(job) {
+  const quoted = job.prompt.match(/says exactly: "([^"]+)/i);
+  if (quoted && quoted[1]) return quoted[1];
+  return job.prompt;
+}
+
+function durationLabel(job) {
+  return `${Math.round((job.num_frames - 1) / job.frame_rate)} sec`;
+}
+
+function renderJobs() {
+  const jobs = state.jobs;
+  const running = jobs.filter(job => job.status === "running").length;
+  const queued = jobs.filter(job => job.status === "queued").length;
+  const complete = jobs.filter(job => job.status === "done").length;
+  $("activeCount").textContent = running;
+  $("waitingCount").textContent = queued;
+  $("completeCount").textContent = complete;
+  const activeTotal = running + queued;
+  $("queueBadge").textContent = activeTotal;
+  $("queueBadge").classList.toggle("visible", activeTotal > 0);
+
+  if (!jobs.length) {
+    $("jobs").innerHTML = '<div class="queue-empty"><div><span class="empty-mark">Q</span>No jobs in this session</div></div>';
+    return;
+  }
+
+  $("jobs").innerHTML = jobs.map(job => {
+    const statusText = { running: "Rendering", queued: "Waiting", done: "Complete", failed: "Failed" }[job.status] || job.status;
+    const tailText = job.status === "running" ? `${job.elapsed || 0} sec elapsed` :
+      job.status === "queued" ? "Serial GPU queue" :
+      job.status === "done" ? "Ready in library" : "Render stopped";
+    const log = job.status === "running" ? job.log : job.status === "failed" ? job.error : "";
+    return `<article class="queue-item">
+      <div class="queue-state"><span class="status-pill ${esc(job.status)}">${esc(statusText)}</span><span class="job-id">#${esc(job.id)}</span></div>
+      <div class="job-main">
+        <p class="job-title" title="${esc(jobTitle(job))}">${esc(jobTitle(job))}</p>
+        <div class="job-meta">${job.width} x ${job.height} &middot; ${esc(durationLabel(job))} &middot; seed ${esc(job.seed)}</div>
+        ${log ? `<div class="job-log">${esc(log)}</div>` : ""}
+      </div>
+      <div class="job-tail">
+        <span class="job-time">${esc(tailText)}</span>
+        <span class="meter ${esc(job.status)}"><span></span></span>
+        ${job.status === "done" ? '<button class="button compact" type="button" data-open-library>Open clip</button>' : ""}
+      </div>
+    </article>`;
+  }).join("");
+}
 
 function anyPlaying(container) {
-  return [...container.querySelectorAll("video")].some(v => !v.paused && !v.ended);
+  return [...container.querySelectorAll("video")].some(video => !video.paused && !video.ended);
+}
+
+let activeGalleryVideo = null;
+
+function stopGalleryVideo() {
+  if (!activeGalleryVideo) return;
+  const video = activeGalleryVideo;
+  const media = video.closest(".clip-media");
+  activeGalleryVideo = null;
+  video.pause();
+  video.removeAttribute("src");
+  video.preload = "none";
+  video.controls = false;
+  video.load();
+  const replacement = video.cloneNode(false);
+  replacement.removeAttribute("src");
+  replacement.preload = "none";
+  replacement.controls = false;
+  video.replaceWith(replacement);
+  media?.querySelector(".clip-play")?.removeAttribute("hidden");
+}
+
+function playGalleryVideo(button) {
+  const media = button.closest(".clip-media");
+  const video = media?.querySelector("video");
+  if (!video) return;
+  if (activeGalleryVideo && activeGalleryVideo !== video) stopGalleryVideo();
+  activeGalleryVideo = video;
+  video.preload = "metadata";
+  video.controls = true;
+  video.src = video.dataset.src;
+  video.load();
+  button.hidden = true;
+  reportClientEvent("video-start", video.dataset.src);
+  video.addEventListener("ended", () => {
+    if (activeGalleryVideo === video) stopGalleryVideo();
+  }, { once: true });
+  video.addEventListener("error", () => {
+    if (activeGalleryVideo !== video) return;
+    reportClientEvent("video-error", video.dataset.src);
+    stopGalleryVideo();
+    showToast("Could not play this clip", true);
+  }, { once: true });
+  video.play().catch(error => {
+    if (activeGalleryVideo !== video) return;
+    reportClientEvent("video-play-error", error.message);
+    stopGalleryVideo();
+    showToast("Could not play this clip", true);
+  });
+}
+
+function stopLatestPreview() {
+  const video = $("latestPreview");
+  if (video.getAttribute("src")) {
+    video.pause();
+    video.removeAttribute("src");
+    video.preload = "none";
+    video.controls = false;
+    video.load();
+  }
+  $("latestPlay").hidden = !state.gallery[0] || state.currentView !== "create";
+}
+
+function playLatestPreview() {
+  const latest = state.gallery[0];
+  const video = $("latestPreview");
+  if (!latest || document.hidden || state.currentView !== "create") return;
+  stopLatestPreview();
+  video.dataset.file = latest.file;
+  video.preload = "metadata";
+  video.controls = true;
+  video.src = `${mediaUrl(latest.file)}#t=0.01`;
+  video.load();
+  $("latestPlay").hidden = true;
+  reportClientEvent("latest-video-start", mediaUrl(latest.file));
+  video.addEventListener("ended", stopLatestPreview, { once: true });
+  video.addEventListener("error", () => {
+    reportClientEvent("latest-video-error", mediaUrl(latest.file));
+    stopLatestPreview();
+  }, { once: true });
+  video.play().catch(error => {
+    reportClientEvent("latest-video-play-error", error.message);
+    stopLatestPreview();
+  });
+}
+
+function renderLatest() {
+  const latest = state.gallery[0];
+  const video = $("latestPreview");
+  if (!latest) {
+    state.latestFile = "";
+    delete video.dataset.file;
+    stopLatestPreview();
+    $("latestEmpty").hidden = false;
+    $("latestCaption").hidden = true;
+    return;
+  }
+  if (state.latestFile !== latest.file) {
+    state.latestFile = latest.file;
+  }
+  $("latestEmpty").hidden = true;
+  $("latestCaption").hidden = false;
+  $("latestName").textContent = latest.file;
+  $("latestSize").textContent = `${latest.size_mb} MB`;
+  if (state.currentView !== "create") stopLatestPreview();
+  else $("latestPlay").hidden = Boolean(video.getAttribute("src"));
+}
+
+function renderGallery(force = false) {
+  const query = value("librarySearch").toLowerCase();
+  const filtered = state.gallery.filter(video => video.file.toLowerCase().includes(query));
+  $("libraryCount").textContent = state.gallery.length;
+  const key = `${query}|${filtered.map(video => video.file).join("|")}`;
+  const gallery = $("gallery");
+  if (!force && key === state.lastGalleryKey) return;
+  if (!force && anyPlaying(gallery)) return;
+  if (activeGalleryVideo) stopGalleryVideo();
+  state.lastGalleryKey = key;
+  if (!filtered.length) {
+    gallery.innerHTML = '<div class="surface library-empty" style="grid-column:1/-1"><div><span class="empty-mark">L</span>No rendered clips found</div></div>';
+    return;
+  }
+  gallery.innerHTML = filtered.map(video => `<article class="clip-card">
+    <div class="clip-media">
+      <video playsinline preload="none" data-src="${mediaUrl(video.file)}"></video>
+      <button class="clip-play" type="button" data-play-video aria-label="Play ${esc(video.file)}" title="Play clip">&#9654;</button>
+    </div>
+    <div class="clip-body">
+      <p class="clip-name" title="${esc(video.file)}">${esc(video.file)}</p>
+      <div class="clip-meta">${esc(video.mtime)} &middot; ${esc(video.size_mb)} MB</div>
+      <div class="clip-actions">
+        <a class="button compact" href="/videos/${encodeURIComponent(video.file)}" download>Download</a>
+        <button class="button compact" type="button" data-copy="${esc(video.file)}">Copy name</button>
+      </div>
+    </div>
+  </article>`).join("");
 }
 
 async function refresh() {
-  const [jobs, gallery] = await Promise.all([
-    fetch("/api/jobs").then(r => r.json()),
-    fetch("/api/gallery").then(r => r.json()),
-  ]);
-  const jb = $("jobs");
-  const jobsHTML = jobs.length ? jobs.map(j => `
-    <div class="job">
-      <span class="status ${j.status}">${j.status}</span>
-      &middot; ${j.width}&times;${j.height} &middot; ${((j.num_frames - 1) / j.frame_rate).toFixed(0)}s &middot; seed ${j.seed}
-      ${j.elapsed ? `&middot; ${j.elapsed}s elapsed` : ""}
-      <div class="p" title="${esc(j.prompt)}">${esc(j.prompt)}</div>
-      ${j.status === "running" && j.log ? `<div class="log">${esc(j.log)}</div>` : ""}
-      ${j.status === "failed" && j.error ? `<div class="log">${esc(j.error)}</div>` : ""}
-      ${j.status === "done" ? `<div class="log">saved as ${esc(j.file)} &middot; play it in the gallery below</div>` : ""}
-    </div>`).join("") : "No jobs yet.";
-  if (jobsHTML !== lastJobsHTML) { jb.innerHTML = jobsHTML; lastJobsHTML = jobsHTML; }
-
-  const galleryKey = gallery.map(v => v.file).join("|");
-  const gal = $("gallery");
-  if (galleryKey !== lastGalleryKey && !anyPlaying(gal)) {
-    gal.innerHTML = gallery.map(v => `
-      <figure>
-        <video controls preload="metadata" src="/videos/${encodeURIComponent(v.file)}"></video>
-        <figcaption>${esc(v.file)} &middot; ${v.size_mb} MB &middot; ${v.mtime}</figcaption>
-      </figure>`).join("");
-    lastGalleryKey = galleryKey;
+  if (state.refreshBusy) return;
+  state.refreshBusy = true;
+  try {
+    const response = await fetchWithTimeout("/api/state", {}, 12000);
+    if (!response.ok) throw new Error("Local engine unavailable");
+    const snapshot = await response.json();
+    state.jobs = snapshot.jobs || [];
+    state.gallery = snapshot.gallery || [];
+    state.keyframes = snapshot.keyframes || [];
+    applyAIStatus(snapshot.ai);
+    $("connectionDot").className = "connection-dot online";
+    $("engineMeta").textContent = "Local engine online";
+    renderJobs();
+    renderLatest();
+    renderKeyframes(state.keyframes);
+    $("libraryCount").textContent = state.gallery.length;
+    if (state.currentView === "library") renderGallery();
+    if (!state.readyReported) {
+      state.readyReported = true;
+      reportClientEvent("ready", `view=${state.currentView}`);
+    }
+  } catch (error) {
+    reportClientEvent("refresh-error", error.message);
+    $("connectionDot").className = "connection-dot offline";
+    $("engineMeta").textContent = error.message === "Request timed out" ? "Engine response timed out" : "Engine offline";
+  } finally {
+    state.refreshBusy = false;
   }
 }
-loadKeyframes();
+
+function switchView(view, updateLocation = true) {
+  if (!["create", "queue", "library"].includes(view)) view = "create";
+  state.currentView = view;
+  document.querySelectorAll(".view").forEach(section => section.classList.toggle("active", section.id === `view-${view}`));
+  document.querySelectorAll(".nav-button").forEach(button => button.classList.toggle("active", button.dataset.view === view));
+  const titles = {
+    create: ["Production workspace / Create", "New content batch"],
+    queue: ["Production workspace / Queue", "Render queue"],
+    library: ["Production workspace / Library", "Content library"]
+  };
+  $("pageCrumb").textContent = titles[view][0];
+  $("pageTitle").textContent = titles[view][1];
+  $("resetDraft").hidden = view !== "create";
+  if (view !== "library") stopGalleryVideo();
+  if (view === "create") renderLatest();
+  else stopLatestPreview();
+  if (view === "library") renderGallery(true);
+  if (view === "queue") renderJobs();
+  if (updateLocation && window.location.hash !== `#${view}`) {
+    window.history.pushState({ view }, "", `#${view}`);
+  }
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+document.querySelectorAll(".nav-button").forEach(button => button.addEventListener("click", () => switchView(button.dataset.view)));
+document.querySelectorAll("[data-open-library]").forEach(button => button.addEventListener("click", () => switchView("library")));
+
+$("hookChoices").addEventListener("click", event => {
+  const button = event.target.closest("button[data-value]");
+  if (button) selectHook(button.dataset.value);
+});
+$("formatChoices").addEventListener("click", event => {
+  const button = event.target.closest("button[data-value]");
+  if (button) selectFormat(button.dataset.value);
+});
+
+persistIds.forEach(id => {
+  $(id).addEventListener("input", () => { updateUI(); saveDraft(); });
+  $(id).addEventListener("change", () => { updateUI(); saveDraft(); });
+});
+$("draftScript").addEventListener("click", draftScript);
+$("coWriteCampaign").addEventListener("click", () => coWrite("campaign"));
+$("refineScript").addEventListener("click", () => coWrite("script"));
+$("improvePrompts").addEventListener("click", improvePrompts);
+$("resetPrompt").addEventListener("click", resetSelectedPrompt);
+$("renderVariant").addEventListener("click", renderSelectedVariant);
+$("promptVariant").addEventListener("change", renderPromptEditor);
+$("promptPreview").addEventListener("input", event => {
+  const index = Number($("promptVariant").value || 0);
+  state.prompts[index] = event.target.value;
+  state.promptSources[index] = "edited";
+  $("promptStatus").textContent = "Manually edited";
+  $("promptSummary").textContent = `Variant ${index + 1} · manual prompt`;
+  renderPromptMetrics(event.target.value);
+  saveDraft();
+});
+$("queueBatch").addEventListener("click", queueBatch);
+$("resetDraft").addEventListener("click", resetDraft);
+$("refreshQueue").addEventListener("click", refresh);
+$("latestPlay").addEventListener("click", playLatestPreview);
+$("keyframe").addEventListener("change", updateReferencePreview);
+$("kfupload").addEventListener("change", () => uploadKeyframe($("kfupload").files[0]));
+$("librarySearch").addEventListener("input", () => renderGallery(true));
+
+$("referenceStage").addEventListener("dragover", event => {
+  event.preventDefault();
+  $("referenceStage").classList.add("dragging");
+});
+$("referenceStage").addEventListener("dragleave", () => $("referenceStage").classList.remove("dragging"));
+$("referenceStage").addEventListener("drop", event => {
+  event.preventDefault();
+  $("referenceStage").classList.remove("dragging");
+  uploadKeyframe(event.dataTransfer.files[0]);
+});
+
+document.addEventListener("click", event => {
+  const libraryButton = event.target.closest("[data-open-library]");
+  if (libraryButton) switchView("library");
+  const copyButton = event.target.closest("[data-copy]");
+  if (copyButton) {
+    navigator.clipboard.writeText(copyButton.dataset.copy)
+      .then(() => showToast("Filename copied"))
+      .catch(() => showToast("Could not copy filename", true));
+  }
+  const playButton = event.target.closest("[data-play-video]");
+  if (playButton) playGalleryVideo(playButton);
+});
+
+window.addEventListener("popstate", () => {
+  switchView(window.location.hash.slice(1) || "create", false);
+});
+
+loadDraft();
+switchView(window.location.hash.slice(1) || "create", false);
 refresh();
-setInterval(refresh, 2500);
+setInterval(() => {
+  if (!document.hidden && !activeGalleryVideo && !$("latestPreview").getAttribute("src")) refresh();
+}, 2500);
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    stopLatestPreview();
+    stopGalleryVideo();
+  } else {
+    refresh();
+  }
+});
 </script>
 </body>
 </html>
