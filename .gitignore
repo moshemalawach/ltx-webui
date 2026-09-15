@@ -1,5 +1,11 @@
 .venv/
+.zimage-venv/
+.qc-venv/
 .env
+personas/
+campaigns/
+data/
+scripts/bakeoff/out/
 outputs/
 logs/
 keyframes/

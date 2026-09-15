@@ -70,6 +70,42 @@ printf 'LIBERTAI_API_KEY=%s\n' 'your-key' > .env
 
 The key stays in the server process and is never returned to the browser.
 
+## UGC production features
+
+Research-driven (see `docs/ugc-at-scale-research.md` and `docs/bakeoff-results.md`):
+
+- **UGC-imperfection prompt template** — bake-off winner. All prompts ask for
+  handheld micro-shake, off-center framing, uneven natural light, visible pores,
+  and phone-camera compression (`UGC_STYLE_BLOCK` in app.py, mirrored in the UI).
+- **Personas** — a saved *character DNA* block (locked physical description) plus
+  hero stills. Applying a persona injects the DNA verbatim into every prompt and
+  conditions frame 0 on the hero still at 0.95 — verified to lock identity across
+  clips *and* to suppress the burned-in captions the distilled pipeline otherwise
+  produces. Stills generate locally with Z-Image-Turbo (`.zimage-venv`,
+  `scripts/zimage_still.py`) through the same render queue.
+- **End-frame reference** — optional second keyframe pinned at 75% of the clip
+  for continuity (maps to the backend's multi-keyframe conditioning).
+- **Campaigns** — `POST /api/campaigns` (or the *Launch 5-hook campaign* button)
+  renders one variant per hook (discovery / problem / proof / confession /
+  hot take), GLM-refined in batches when the co-writer is configured. Rate the
+  results in the Library, then scale the winning hook.
+- **Metadata sidecars** — every output gets `outputs/<name>.mp4.json` (prompt,
+  seed, params, persona, hook, campaign, rating, tags). The Library shows badges
+  and star ratings; *Re-render* re-queues any clip from its sidecar with a fresh
+  seed. Queued jobs survive restarts via `data/jobs.json`.
+- **Talking avatars** — *Queue avatar take* runs the fully local chain:
+  LTX `t2a_one_stage` voiceover, QC'd by faster-whisper (`.qc-venv`, retries on
+  mismatched words), then `a2vid_two_stage` renders the persona's hero still
+  speaking that audio with true lip sync (~3 min per 5 s clip on a 5090).
+  Camera language is locked automatically (camera moves degrade lip sync).
+
+Extra venvs (one-time setup):
+
+```bash
+uv venv .zimage-venv --python 3.12 && uv pip install -p .zimage-venv/bin/python torch diffusers transformers accelerate safetensors sentencepiece protobuf
+uv venv .qc-venv --python 3.12 && uv pip install -p .qc-venv/bin/python faster-whisper
+```
+
 ## Usage notes
 
 - **Keyframe conditioning is the quality lever.** Text-only prompts gamble on

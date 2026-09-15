@@ -615,6 +615,16 @@
   .clip-name { margin: 0 0 5px; overflow: hidden; font-size: 11px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
   .clip-meta { color: var(--ink-faint); font-size: 10px; }
   .clip-actions { display: flex; align-items: center; gap: 7px; margin-top: 10px; }
+  .badge { display: inline-block; padding: 1px 7px; border: 1px solid var(--line); border-radius: 999px; font-size: 10px; color: var(--ink-soft); }
+  .star-row { margin-top: 5px; }
+  .star { background: none; border: none; cursor: pointer; font-size: 14px; padding: 0 1px; color: var(--ink-faint); }
+  .star.on { color: #d9a514; }
+  .campaign-row { padding: 9px 0; border-bottom: 1px solid var(--line); }
+  .campaign-row:last-child { border-bottom: none; }
+  .campaign-cells { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+  .campaign-cell.done { border-color: #3f9d63; }
+  .campaign-cell.failed { border-color: #c4554d; }
+  .campaign-cell.running { border-color: #d9a514; }
   .clip-actions a { text-decoration: none; }
 
   .toast {
@@ -824,6 +834,7 @@
 
                 <label class="field" style="margin-top:14px"><span>Spoken script <b class="required">*</b></span><textarea id="script" maxlength="1200" style="min-height:142px" placeholder="Natural, spoken copy for the creator"></textarea></label>
                 <label class="field" style="margin-top:14px"><span>Visual direction</span><textarea id="direction" maxlength="600" placeholder="Location, framing, product interaction, wardrobe, light"></textarea></label>
+                <label class="field" style="margin-top:14px"><span>Character DNA</span><textarea id="characterDna" maxlength="800" placeholder="Locked physical description of the recurring creator: name, hair, face, marks, wardrobe with exact nouns (e.g. 'sage green ribbed cardigan'). Kept verbatim in every variant."></textarea></label>
 
                 <div class="creative-toolbar">
                   <span class="word-count" id="scriptCount">0 words</span>
@@ -865,6 +876,15 @@
                 <span class="section-status" id="referenceStatus">Optional</span>
               </div>
               <div class="surface-body">
+                <div class="output-block" style="margin-bottom:14px">
+                  <div class="output-label-row"><span class="field-label">Creator persona</span><span class="field-label" id="personaStatus">None</span></div>
+                  <div class="reference-actions">
+                    <select id="personaSelect" aria-label="Creator persona"><option value="">No persona</option></select>
+                    <button class="button" id="personaSave" type="button" title="Save the current Character DNA as a persona">Save</button>
+                    <button class="button" id="personaStill" type="button" title="Generate a new hero still for this persona" disabled>New still</button>
+                    <button class="button" id="personaDelete" type="button" disabled>Delete</button>
+                  </div>
+                </div>
                 <div class="reference-stage" id="referenceStage">
                   <img id="kfpreview" alt="Selected product reference">
                   <div class="reference-empty">
@@ -881,6 +901,16 @@
                 <div class="range-row">
                   <label class="field" style="display:block"><span>Reference strength</span><input type="range" id="kfstrength" value="0.9" min="0.1" max="1" step="0.05"></label>
                   <span class="range-value" id="strengthValue">90%</span>
+                </div>
+                <div class="output-block" style="margin-top:14px">
+                  <div class="output-label-row"><span class="field-label">End-frame reference (continuity)</span></div>
+                  <div class="reference-actions">
+                    <select id="lastKeyframe" aria-label="End-frame reference"><option value="">No end frame</option></select>
+                  </div>
+                  <div class="range-row">
+                    <label class="field" style="display:block"><span>End strength</span><input type="range" id="lastKfstrength" value="0.45" min="0.1" max="1" step="0.05"></label>
+                    <span class="range-value" id="lastStrengthValue">45%</span>
+                  </div>
                 </div>
               </div>
             </section>
@@ -937,6 +967,8 @@
                 <div class="batch-summary">
                   <div class="variant-list" id="variantList"></div>
                   <button class="button primary queue-button" id="queueBatch" type="button">Queue 3 variants</button>
+                  <button class="button queue-button" id="launchCampaign" type="button" title="Render one variant per hook (5 hooks) to find the winning angle before scaling">Launch 5-hook campaign</button>
+                  <button class="button queue-button" id="queueAvatar" type="button" disabled title="Talking head: QC'd voiceover + audio-conditioned render of the selected persona (needs a persona with a hero still)">Queue avatar take</button>
                   <div class="estimate" id="estimate">Approx. 9 min GPU time</div>
                 </div>
               </div>
@@ -968,6 +1000,12 @@
             </div>
             <button class="button" type="button" id="refreshQueue">Refresh</button>
           </div>
+          <section class="surface" id="campaignPanel" hidden>
+            <div class="surface-head">
+              <div class="surface-title"><h2>Campaigns</h2></div>
+            </div>
+            <div class="surface-body" id="campaignList"></div>
+          </section>
           <section class="surface queue-list" id="jobs">
             <div class="queue-empty"><div><span class="empty-mark">Q</span>No jobs in this session</div></div>
           </section>
@@ -1004,6 +1042,7 @@ const DEFAULT_DRAFT = {
   tone: "candid",
   hook: "discovery",
   direction: "A bright lived-in bathroom in the morning. Handheld front-facing phone camera at arm's length, natural window light, casual neutral clothes. The creator holds the serum close to camera, dispenses one drop, applies it to one cheek, then looks back into the lens.",
+  characterDna: "",
   format: "vertical",
   frames: "193",
   fps: "25",
@@ -1053,6 +1092,9 @@ const CONCEPT_LABELS = {
   founder: "Founder story"
 };
 
+// Mirrors UGC_STYLE_BLOCK in app.py — the research-verified phone-camera imperfection template.
+const UGC_STYLE = "Handheld phone camera with tiny natural wobble and micro-shake, slightly imperfect framing with the subject a little off-center. Natural window or indoor light with uneven exposure, one side of the scene brighter than the other. Natural skin texture with visible pores and small imperfections, everyday slightly cluttered surroundings, realistic smartphone sharpness and mild phone-camera compression, like real UGC footage filmed by the person themselves rather than a polished commercial.";
+
 const state = {
   hook: "discovery",
   format: "vertical",
@@ -1067,6 +1109,8 @@ const state = {
   jobs: [],
   gallery: [],
   keyframes: [],
+  personas: [],
+  lastPersonaKey: "",
   currentView: "create",
   lastGalleryKey: "",
   lastKeyframeKey: "",
@@ -1074,12 +1118,12 @@ const state = {
   latestFile: ""
 };
 
-const CLIENT_BUILD = "20260714.4";
+const CLIENT_BUILD = "20260714.5";
 
 const persistIds = [
   "productName", "productType", "audience", "benefit", "proof", "cta",
-  "concept", "creator", "tone", "script", "direction", "frames", "fps",
-  "variants", "seed", "kfstrength"
+  "concept", "creator", "tone", "script", "direction", "characterDna",
+  "frames", "fps", "variants", "seed", "kfstrength"
 ];
 
 function value(id) { return $(id).value.trim(); }
@@ -1246,6 +1290,7 @@ function getCreativeContext() {
     hook: state.hook,
     script: value("script"),
     direction: value("direction"),
+    character_dna: value("characterDna"),
     format_label: FORMAT[state.format].label,
     duration_seconds: Number(durationSeconds().toFixed(2)),
     variant_count: Number($("variants").value)
@@ -1276,18 +1321,23 @@ function buildPrompt(variantIndex) {
     "The creator begins in a medium selfie shot, then naturally brings the product close to the lens before returning to eye contact.",
     "The take opens on the product in hand, tilts up to the creator's face, and stays intimate and handheld."
   ];
-  const environment = value("direction") || "A real, lived-in home interior with soft daylight, casual styling, and natural handheld phone framing.";
+  const environment = value("direction") || "A real, lived-in home interior with everyday objects casually visible, natural window light, and handheld phone framing.";
+  const dna = value("characterDna");
+  const subject = dna
+    ? `${dna} The creator ${CONCEPT_ACTION[data.concept] || CONCEPT_ACTION.demo}.`
+    : `${CREATOR[data.creator] || CREATOR.customer} ${CONCEPT_ACTION[data.concept] || CONCEPT_ACTION.demo}.`;
   const type = data.productType ? `${data.productName}, ${data.productType}` : data.productName;
   return [
-    `Authentic creator-style social video in ${format.direction}, captured on a modern smartphone as one continuous take.`,
-    `${CREATOR[data.creator] || CREATOR.customer} ${CONCEPT_ACTION[data.concept] || CONCEPT_ACTION.demo}.`,
+    `Ultra-realistic ${format.direction} video that looks like a real person filmed it on their phone as one continuous take.`,
+    subject,
     `${environment}`,
+    UGC_STYLE,
     `${cameraMoves[variantIndex % cameraMoves.length]}`,
     `The product is ${type || "the featured product"}; its shape, packaging, and color remain consistent throughout the shot.`,
     `The performance is ${TONE[data.tone] || TONE.candid}, with direct eye contact, natural gestures, realistic pauses, and accurate lip sync.`,
     `The creator says exactly: "${spoken.replace(/"/g, "'")}"`,
     `The spoken line and one simple primary product action finish by ${finishAt} seconds, followed by a natural silent hold through the end of the ${Math.round(seconds)}-second take.`,
-    "Natural room tone and clear close-recorded speech. Spoken words are audio only and never appear visually. The frame contains no subtitles, captions, title cards, watermarks, interface elements, or generated readable text. Clothing and the set are plain and unbranded with no lettering. Any screen is oblique, defocused, or too small to read; unavoidable packaging lettering stays consistent with the supplied reference or remains too small to read. No lower thirds, transitions, or floating graphics. Photorealistic skin texture, believable hands, everyday lighting, real UGC rather than a polished commercial."
+    "Natural room tone and close phone-mic speech with slight room echo. Spoken words are audio only and never appear visually. The frame contains no subtitles, captions, title cards, watermarks, interface elements, or generated readable text. Clothing and the set are plain and unbranded with no lettering. Any screen is oblique, defocused, or too small to read; unavoidable packaging lettering stays consistent with the supplied reference or remains too small to read. No lower thirds, transitions, or floating graphics. Believable hands, real UGC rather than a polished commercial."
   ].join(" ");
 }
 
@@ -1646,6 +1696,16 @@ function generationBody(index, prompt, reuseVariantSeed = false) {
     body.keyframe = $("keyframe").value;
     body.keyframe_strength = Number($("kfstrength").value);
   }
+  if ($("lastKeyframe").value) {
+    // Pin a continuity reference near the end of the clip (75% in, snapped to 8k),
+    // mirroring the proven first+late-frame conditioning pattern.
+    const lastFrame = Math.round(((body.num_frames - 1) * 0.75) / 8) * 8;
+    body.keyframes = [{
+      file: $("lastKeyframe").value,
+      frame: Math.max(8, lastFrame),
+      strength: Number($("lastKfstrength").value)
+    }];
+  }
   return body;
 }
 
@@ -1765,21 +1825,167 @@ function renderKeyframes(names, selectName) {
   const key = names.join("|");
   if (selectName === undefined && key === state.lastKeyframeKey) return;
   state.lastKeyframeKey = key;
-  const select = $("keyframe");
-  const current = selectName ?? select.value;
+  [["keyframe", "No reference"], ["lastKeyframe", "No end frame"]].forEach(([id, label]) => {
+    const select = $(id);
+    const current = (id === "keyframe" ? selectName : undefined) ?? select.value;
+    select.replaceChildren();
+    const empty = document.createElement("option");
+    empty.value = "";
+    empty.textContent = label;
+    select.appendChild(empty);
+    names.forEach(name => {
+      const option = document.createElement("option");
+      option.value = name;
+      option.textContent = name;
+      select.appendChild(option);
+    });
+    select.value = names.includes(current) ? current : "";
+  });
+  updateReferencePreview();
+}
+
+function renderPersonas(personas) {
+  const key = JSON.stringify(personas);
+  if (key === state.lastPersonaKey) return;
+  state.lastPersonaKey = key;
+  state.personas = personas;
+  const select = $("personaSelect");
+  const current = select.value;
   select.replaceChildren();
   const empty = document.createElement("option");
   empty.value = "";
-  empty.textContent = "No reference";
+  empty.textContent = "No persona";
   select.appendChild(empty);
-  names.forEach(name => {
+  personas.forEach(persona => {
     const option = document.createElement("option");
-    option.value = name;
-    option.textContent = name;
+    option.value = persona.slug;
+    option.textContent = `${persona.name} (${(persona.stills || []).length} stills)`;
     select.appendChild(option);
   });
-  select.value = names.includes(current) ? current : "";
-  updateReferencePreview();
+  select.value = personas.some(p => p.slug === current) ? current : "";
+  updatePersonaControls();
+}
+
+function selectedPersona() {
+  return state.personas.find(p => p.slug === $("personaSelect").value) || null;
+}
+
+function updatePersonaControls() {
+  const persona = selectedPersona();
+  $("personaStill").disabled = !persona;
+  $("personaDelete").disabled = !persona;
+  $("queueAvatar").disabled = !(persona && (persona.stills || []).length);
+  $("personaStatus").textContent = persona ? persona.name : "None";
+}
+
+async function queueAvatar() {
+  const persona = selectedPersona();
+  if (!persona) return;
+  const script = value("script");
+  if (script.length < 10) {
+    showToast("Write the spoken script first", true);
+    $("script").focus();
+    return;
+  }
+  const button = $("queueAvatar");
+  button.disabled = true;
+  try {
+    const body = { persona: persona.slug, script, direction: value("direction") };
+    if (value("seed") !== "") body.seed = Number(value("seed"));
+    const response = await fetchWithTimeout("/api/avatar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    }, 15000);
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || "Could not queue the avatar take");
+    }
+    await refresh();
+    switchView("queue");
+    showToast(`Avatar take queued for "${persona.name}" (voiceover + lip-synced render, ~4 min)`);
+  } catch (error) {
+    showToast(error.message, true);
+  } finally {
+    button.disabled = false;
+    updatePersonaControls();
+  }
+}
+
+function applyPersona() {
+  const persona = selectedPersona();
+  updatePersonaControls();
+  if (!persona) return;
+  $("characterDna").value = persona.dna;
+  const still = (persona.stills || [])[0];
+  if (still && state.keyframes.includes(still)) {
+    renderKeyframes(state.keyframes, still);
+  }
+  updateUI();
+  saveDraft();
+  showToast(`Persona "${persona.name}" applied to the brief`);
+}
+
+async function savePersona() {
+  const dna = value("characterDna");
+  if (dna.length < 10) {
+    showToast("Write the Character DNA first (10+ characters)", true);
+    $("characterDna").focus();
+    return;
+  }
+  const existing = selectedPersona();
+  const name = window.prompt("Persona name", existing ? existing.name : "");
+  if (!name || !name.trim()) return;
+  try {
+    const response = await fetchWithTimeout("/api/personas", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: name.trim(), dna })
+    }, 15000);
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || "Could not save persona");
+    }
+    const persona = await response.json();
+    await refresh();
+    $("personaSelect").value = persona.slug;
+    updatePersonaControls();
+    showToast(`Persona "${persona.name}" saved`);
+  } catch (error) {
+    showToast(error.message, true);
+  }
+}
+
+async function generatePersonaStill() {
+  const persona = selectedPersona();
+  if (!persona) return;
+  try {
+    const response = await fetchWithTimeout(`/api/personas/${encodeURIComponent(persona.slug)}/generate-still`, { method: "POST" }, 15000);
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || "Could not queue the still");
+    }
+    await refresh();
+    showToast(`Hero still queued for "${persona.name}" — watch the queue`);
+  } catch (error) {
+    showToast(error.message, true);
+  }
+}
+
+async function deletePersona() {
+  const persona = selectedPersona();
+  if (!persona) return;
+  if (!window.confirm(`Delete persona "${persona.name}" and its stills?`)) return;
+  try {
+    const response = await fetchWithTimeout(`/api/personas/${encodeURIComponent(persona.slug)}`, { method: "DELETE" }, 15000);
+    if (!response.ok) throw new Error("Could not delete persona");
+    $("personaSelect").value = "";
+    state.lastPersonaKey = "";
+    await refresh();
+    showToast(`Persona "${persona.name}" deleted`);
+  } catch (error) {
+    showToast(error.message, true);
+  }
 }
 
 async function uploadKeyframe(file) {
@@ -1811,12 +2017,14 @@ async function uploadKeyframe(file) {
 }
 
 function jobTitle(job) {
+  if (job.kind === "avatar" && job.script) return job.script;
   const quoted = job.prompt.match(/says exactly: "([^"]+)/i);
   if (quoted && quoted[1]) return quoted[1];
   return job.prompt;
 }
 
 function durationLabel(job) {
+  if (!job.num_frames || job.num_frames < 2) return "auto";
   return `${Math.round((job.num_frames - 1) / job.frame_rate)} sec`;
 }
 
@@ -1843,17 +2051,18 @@ function renderJobs() {
       job.status === "queued" ? "Serial GPU queue" :
       job.status === "done" ? "Ready in library" : "Render stopped";
     const log = job.status === "running" ? job.log : job.status === "failed" ? job.error : "";
+    const kindBadge = job.kind && job.kind !== "video" ? `<span class="badge">${esc(job.kind)}</span> ` : "";
     return `<article class="queue-item">
       <div class="queue-state"><span class="status-pill ${esc(job.status)}">${esc(statusText)}</span><span class="job-id">#${esc(job.id)}</span></div>
       <div class="job-main">
-        <p class="job-title" title="${esc(jobTitle(job))}">${esc(jobTitle(job))}</p>
+        <p class="job-title" title="${esc(jobTitle(job))}">${kindBadge}${esc(jobTitle(job))}</p>
         <div class="job-meta">${job.width} x ${job.height} &middot; ${esc(durationLabel(job))} &middot; seed ${esc(job.seed)}</div>
         ${log ? `<div class="job-log">${esc(log)}</div>` : ""}
       </div>
       <div class="job-tail">
         <span class="job-time">${esc(tailText)}</span>
         <span class="meter ${esc(job.status)}"><span></span></span>
-        ${job.status === "done" ? '<button class="button compact" type="button" data-open-library>Open clip</button>' : ""}
+        ${job.status === "done" && job.kind !== "still" ? '<button class="button compact" type="button" data-open-library>Open clip</button>' : ""}
       </div>
     </article>`;
   }).join("");
@@ -1983,20 +2192,128 @@ function renderGallery(force = false) {
     gallery.innerHTML = '<div class="surface library-empty" style="grid-column:1/-1"><div><span class="empty-mark">L</span>No rendered clips found</div></div>';
     return;
   }
-  gallery.innerHTML = filtered.map(video => `<article class="clip-card">
+  gallery.innerHTML = filtered.map(video => {
+    const badges = [
+      video.hook ? `<span class="badge">${esc(HOOK_LABELS[video.hook] || video.hook)}</span>` : "",
+      video.persona ? `<span class="badge">${esc(video.persona)}</span>` : "",
+      Number.isInteger(video.seed) ? `<span class="badge">s${esc(video.seed)}</span>` : ""
+    ].filter(Boolean).join(" ");
+    const rating = Number(video.rating) || 0;
+    const stars = [1, 2, 3, 4, 5].map(n =>
+      `<button type="button" class="star${n <= rating ? " on" : ""}" data-rate="${n}" data-file="${esc(video.file)}" aria-label="Rate ${n} of 5">${n <= rating ? "&#9733;" : "&#9734;"}</button>`
+    ).join("");
+    return `<article class="clip-card">
     <div class="clip-media">
       <video playsinline preload="none" data-src="${mediaUrl(video.file)}"></video>
       <button class="clip-play" type="button" data-play-video aria-label="Play ${esc(video.file)}" title="Play clip">&#9654;</button>
     </div>
     <div class="clip-body">
       <p class="clip-name" title="${esc(video.file)}">${esc(video.file)}</p>
-      <div class="clip-meta">${esc(video.mtime)} &middot; ${esc(video.size_mb)} MB</div>
+      <div class="clip-meta">${esc(video.mtime)} &middot; ${esc(video.size_mb)} MB${badges ? " &middot; " + badges : ""}</div>
+      <div class="clip-meta star-row">${stars}</div>
       <div class="clip-actions">
         <a class="button compact" href="/videos/${encodeURIComponent(video.file)}" download>Download</a>
         <button class="button compact" type="button" data-copy="${esc(video.file)}">Copy name</button>
+        <button class="button compact" type="button" data-rerender="${esc(video.file)}" title="Queue the same prompt and settings with a fresh seed">Re-render</button>
       </div>
     </div>
-  </article>`).join("");
+  </article>`;
+  }).join("");
+}
+
+async function rateVideo(file, rating) {
+  try {
+    const response = await fetchWithTimeout(`/api/videos/${encodeURIComponent(file)}/meta`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rating })
+    }, 10000);
+    if (!response.ok) throw new Error("Could not save rating");
+    const entry = state.gallery.find(video => video.file === file);
+    if (entry) entry.rating = rating;
+    renderGallery(true);
+  } catch (error) {
+    showToast(error.message, true);
+  }
+}
+
+async function rerenderVideo(file) {
+  try {
+    const response = await fetchWithTimeout(`/api/videos/${encodeURIComponent(file)}/rerender`, { method: "POST" }, 15000);
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || "Could not re-render");
+    }
+    showToast("Re-render queued with a fresh seed");
+    await refresh();
+  } catch (error) {
+    showToast(error.message, true);
+  }
+}
+
+function renderCampaigns() {
+  const campaigns = state.campaigns || [];
+  $("campaignPanel").hidden = !campaigns.length;
+  if (!campaigns.length) return;
+  $("campaignList").innerHTML = campaigns.map(campaign => {
+    const cells = (campaign.cells || []).map(cell => {
+      const status = cell.status || "unknown";
+      const label = `${HOOK_LABELS[cell.hook] || cell.hook}${campaign.variants_per_hook > 1 ? ` #${cell.variant + 1}` : ""}`;
+      const stars = cell.rating ? ` ${"★".repeat(cell.rating)}` : "";
+      return `<span class="badge campaign-cell ${esc(status)}" title="${esc(cell.file || "")}">${esc(label)}: ${esc(status)}${stars}</span>`;
+    }).join(" ");
+    return `<div class="campaign-row">
+      <div class="clip-meta"><strong>${esc(campaign.name)}</strong> &middot; ${esc(campaign.status)}${campaign.persona ? ` &middot; ${esc(campaign.persona)}` : ""}</div>
+      <div class="campaign-cells">${cells || "Building prompts&hellip;"}</div>
+    </div>`;
+  }).join("");
+}
+
+async function launchCampaign() {
+  const required = ["productName", "audience", "benefit", "script"];
+  const missing = required.find(id => !value(id));
+  if (missing) {
+    showToast("Complete the required brief and script", true);
+    $(missing).focus();
+    return;
+  }
+  const button = $("launchCampaign");
+  button.disabled = true;
+  try {
+    const persona = selectedPersona();
+    const body = {
+      name: value("productName"),
+      context: getCreativeContext(),
+      variants_per_hook: 1,
+      refine: state.aiConfigured,
+      persona: persona ? persona.slug : null
+    };
+    if ($("keyframe").value) {
+      body.keyframe = $("keyframe").value;
+      body.keyframe_strength = Number($("kfstrength").value);
+    }
+    if ($("lastKeyframe").value) {
+      body.last_keyframe = $("lastKeyframe").value;
+      body.last_keyframe_strength = Number($("lastKfstrength").value);
+    }
+    if (value("seed") !== "") body.seed = Number(value("seed"));
+    const response = await fetchWithTimeout("/api/campaigns", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    }, 15000);
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || "Could not launch campaign");
+    }
+    await refresh();
+    switchView("queue");
+    showToast("Campaign launched: one render per hook. Rate the results, then scale the winner.");
+  } catch (error) {
+    showToast(error.message, true);
+  } finally {
+    button.disabled = false;
+  }
 }
 
 async function refresh() {
@@ -2009,10 +2326,13 @@ async function refresh() {
     state.jobs = snapshot.jobs || [];
     state.gallery = snapshot.gallery || [];
     state.keyframes = snapshot.keyframes || [];
+    state.campaigns = snapshot.campaigns || [];
+    renderPersonas(snapshot.personas || []);
     applyAIStatus(snapshot.ai);
     $("connectionDot").className = "connection-dot online";
     $("engineMeta").textContent = "Local engine online";
     renderJobs();
+    renderCampaigns();
     renderLatest();
     renderKeyframes(state.keyframes);
     $("libraryCount").textContent = state.gallery.length;
@@ -2070,6 +2390,13 @@ persistIds.forEach(id => {
   $(id).addEventListener("input", () => { updateUI(); saveDraft(); });
   $(id).addEventListener("change", () => { updateUI(); saveDraft(); });
 });
+$("personaSelect").addEventListener("change", applyPersona);
+$("personaSave").addEventListener("click", savePersona);
+$("personaStill").addEventListener("click", generatePersonaStill);
+$("personaDelete").addEventListener("click", deletePersona);
+$("lastKfstrength").addEventListener("input", () => {
+  $("lastStrengthValue").textContent = `${Math.round(Number($("lastKfstrength").value) * 100)}%`;
+});
 $("draftScript").addEventListener("click", draftScript);
 $("coWriteCampaign").addEventListener("click", () => coWrite("campaign"));
 $("refineScript").addEventListener("click", () => coWrite("script"));
@@ -2087,6 +2414,8 @@ $("promptPreview").addEventListener("input", event => {
   saveDraft();
 });
 $("queueBatch").addEventListener("click", queueBatch);
+$("launchCampaign").addEventListener("click", launchCampaign);
+$("queueAvatar").addEventListener("click", queueAvatar);
 $("resetDraft").addEventListener("click", resetDraft);
 $("refreshQueue").addEventListener("click", refresh);
 $("latestPlay").addEventListener("click", playLatestPreview);
@@ -2116,6 +2445,13 @@ document.addEventListener("click", event => {
   }
   const playButton = event.target.closest("[data-play-video]");
   if (playButton) playGalleryVideo(playButton);
+  const starButton = event.target.closest("[data-rate]");
+  if (starButton) rateVideo(starButton.dataset.file, Number(starButton.dataset.rate));
+  const rerenderButton = event.target.closest("[data-rerender]");
+  if (rerenderButton) {
+    rerenderButton.disabled = true;
+    rerenderVideo(rerenderButton.dataset.rerender).finally(() => { rerenderButton.disabled = false; });
+  }
 });
 
 window.addEventListener("popstate", () => {
